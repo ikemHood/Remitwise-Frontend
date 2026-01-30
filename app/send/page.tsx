@@ -1,34 +1,30 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import EmergencyTransferModal from './components/EmergencyTransferModal'
+import { useState } from "react";
+import EmergencyTransferModal from "./components/EmergencyTransferModal";
 
-import Link from 'next/link'
-import { ArrowLeft, Send, AlertCircle } from 'lucide-react'
+import Link from "next/link";
+import { ArrowLeft, Send, AlertCircle } from "lucide-react";
+import AutomaticSplitCard from "./components/AutomaticSplitCard";
+import SendHeader from "./components/SendHeader";
 
 export default function SendMoney() {
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false)
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Send Remittance</h1>
-          </div>
-        </div>
-      </header>
+      <SendHeader />
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-md p-8">
+        <div className="bg-[#141414] rounded-xl shadow-md p-8">
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Send Money to Family</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Send Money to Family
+            </h2>
             <p className="text-gray-600">
-              Send remittance via Stellar network. Funds will be automatically split according to your configuration.
+              Send remittance via Stellar network. Funds will be automatically
+              split according to your configuration.
             </p>
           </div>
 
@@ -79,23 +75,7 @@ export default function SendMoney() {
               </select>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-blue-900 mb-1">Automatic Split</h3>
-                  <p className="text-sm text-blue-700">
-                    This remittance will be automatically allocated according to your split configuration:
-                  </p>
-                  <ul className="mt-2 text-sm text-blue-700 space-y-1">
-                    <li>• 50% → Daily Spending</li>
-                    <li>• 30% → Savings</li>
-                    <li>• 15% → Bills</li>
-                    <li>• 5% → Insurance</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            <AutomaticSplitCard />
 
             <div className="flex space-x-4">
               <button
@@ -115,12 +95,15 @@ export default function SendMoney() {
               </button>
             </div>
           </form>
-9
+
           {/* Emergency Mode */}
           <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Emergency Transfer</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Emergency Transfer
+            </h3>
             <p className="text-gray-600 mb-4">
-              Need to send money urgently? Use emergency mode for priority processing.
+              Need to send money urgently? Use emergency mode for priority
+              processing.
             </p>
             <button
               className="bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition"
@@ -131,22 +114,12 @@ export default function SendMoney() {
           </div>
         </div>
 
-        {/* Integration Note */}
-        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-800">
-            <strong>Integration Required:</strong> Connect to Stellar SDK, implement wallet connection (Freighter or similar), 
-            integrate with anchor platform for fiat on/off-ramps, and connect to smart contracts for automatic split execution.
-          </p>
-        </div>
-
-
         {/* emergency transfer modal */}
         <EmergencyTransferModal
-  open={showEmergencyModal}
-  onClose={() => setShowEmergencyModal(false)}
-/>
+          open={showEmergencyModal}
+          onClose={() => setShowEmergencyModal(false)}
+        />
       </main>
     </div>
-  )
+  );
 }
-

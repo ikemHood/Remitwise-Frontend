@@ -8,6 +8,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          red: '#D72323',
+          dark: '#0A0A0A',
+        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
@@ -19,6 +23,12 @@ module.exports = {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
+        },
+        red: {
+          600: '#DC2626',
+          700: '#B91C1C',
+          800: '#991B1B',
+          900: '#7F1D1D',
         },
       },
     },

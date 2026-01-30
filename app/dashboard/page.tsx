@@ -1,186 +1,299 @@
-import Link from 'next/link'
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, PiggyBank } from 'lucide-react'
+import Link from "next/link";
+import {
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  PiggyBank,
+  Send,
+  File,
+  FileText,
+  Shield,
+} from "lucide-react";
+import CurrentMoneySplitWidget from '@/components/CurrentMoneySplitWidget'
+import GoalProgress from "@/components/Dashboard/GoalProgress";
+import SplitBar from "@/components/Dashboard/SplitBar";
+import StatCard from "@/components/Dashboard/StatCard";
+import TransactionHistoryItem, { Transaction } from "@/components/Dashboard/TransactionHistoryItem";
+
+const recentTransactions: Transaction[] = [
+  {
+    id: "TX001",
+    type: "Send Money",
+    amount: -500.00,
+    currency: "USDC",
+    counterpartyName: "Maria Santos (Philippines)",
+    counterpartyLabel: "To",
+    date: "2024-01-28 14:32:15",
+    fee: 0.50,
+    status: "Completed"
+  },
+  {
+    id: "TX002",
+    type: "Smart Split",
+    amount: -1200.00,
+    currency: "USDC",
+    counterpartyName: "Smart Split: 4 allocations",
+    counterpartyLabel: "To",
+    date: "2024-01-27 09:15:42",
+    fee: 0.30,
+    status: "Completed"
+  },
+  {
+    id: "TX003",
+    type: "Bill Payment",
+    amount: -85.50,
+    currency: "USDC",
+    counterpartyName: "Manila Electric Company",
+    counterpartyLabel: "To",
+    date: "2024-01-26 16:45:23",
+    fee: 0.10,
+    status: "Completed"
+  },
+  {
+    id: "TX004",
+    type: "Insurance",
+    amount: -25.00,
+    currency: "USDC",
+    counterpartyName: "HealthGuard Insurance Premium",
+    counterpartyLabel: "To",
+    date: "2024-01-25 11:20:05",
+    fee: 0.05,
+    status: "Completed"
+  },
+  {
+    id: "TX005",
+    type: "Savings",
+    amount: -200.00,
+    currency: "USDC",
+    counterpartyName: "Education Fund Goal",
+    counterpartyLabel: "To",
+    date: "2024-01-24 08:55:17",
+    fee: 0.10,
+    status: "Completed"
+  },
+  {
+    id: "TX006",
+    type: "Family Transfer",
+    amount: -150.00,
+    currency: "USDC",
+    counterpartyName: "Carlos Santos (Son)",
+    counterpartyLabel: "To",
+    date: "2024-01-23 19:30:44",
+    fee: 0.15,
+    status: "Completed"
+  },
+  {
+    id: "TX007",
+    type: "Received",
+    amount: 75.00,
+    currency: "USDC",
+    counterpartyName: "Refund from LOBSTR Anchor",
+    counterpartyLabel: "From",
+    date: "2024-01-22 13:15:30",
+    fee: 0.00,
+    status: "Completed"
+  },
+  {
+    id: "TX008",
+    type: "Send Money",
+    amount: -320.00,
+    currency: "USDC",
+    counterpartyName: "Juan Dela Cruz (Philippines)",
+    counterpartyLabel: "To",
+    date: "2024-01-21 10:42:18",
+    fee: 0.40,
+    status: "Pending"
+  },
+  {
+    id: "TX009",
+    type: "Bill Payment",
+    amount: -120.00,
+    currency: "USDC",
+    counterpartyName: "Water District Payment",
+    counterpartyLabel: "To",
+    date: "2024-01-20 15:22:55",
+    fee: 0.00,
+    status: "Failed"
+  },
+  {
+    id: "TX010",
+    type: "Smart Split",
+    amount: -800.00,
+    currency: "USDC",
+    counterpartyName: "Smart Split: 4 allocations",
+    counterpartyLabel: "To",
+    date: "2024-01-19 12:08:33",
+    fee: 0.25,
+    status: "Completed"
+  }
+];
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#141414]">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-(--background) shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/" className="text-gray-600 hover:text-gray-900">
+            <Link
+              href="/"
+              className="text-(--foreground) hover:text-(--foreground)"
+            >
               <ArrowLeft className="w-6 h-6" />
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-(--foreground)">
+              Dashboard
+            </h1>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             title="Total Sent"
             value="$1,200"
-            change="+$300 this month"
-            icon={<DollarSign className="w-6 h-6" />}
-            trend="up"
+            detail1="+$300"
+            detail1Color="text-red-500"
+            detail2="+25%"
+            icon={<Send className="w-5 h-5" />}
+            showTrend={true}
           />
           <StatCard
             title="Savings"
             value="$360"
-            change="+$90 this month"
-            icon={<PiggyBank className="w-6 h-6" />}
-            trend="up"
+            detail1="+$90"
+            detail1Color="text-red-500"
+            detail2="+33%"
+            icon={<PiggyBank className="w-5 h-5" />}
+            showTrend={true}
           />
           <StatCard
             title="Bills Paid"
             value="$180"
-            change="3 bills this month"
-            icon={<TrendingUp className="w-6 h-6" />}
-            trend="neutral"
+            detail1="3 bills"
+            detail2="This month"
+            icon={<FileText className="w-5 h-5" />}
           />
           <StatCard
             title="Insurance"
             value="$60"
-            change="2 active policies"
-            icon={<TrendingDown className="w-6 h-6" />}
-            trend="neutral"
+            detail1="2 policies"
+            detail2="Active"
+            icon={<Shield className="w-5 h-5" />}
           />
         </div>
 
         {/* Money Split Visualization */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Current Money Split</h2>
-          <div className="space-y-4">
-            <SplitBar label="Daily Spending" amount={150} percentage={50} color="bg-blue-500" />
-            <SplitBar label="Savings" amount={90} percentage={30} color="bg-green-500" />
-            <SplitBar label="Bills" amount={45} percentage={15} color="bg-yellow-500" />
-            <SplitBar label="Insurance" amount={15} percentage={5} color="bg-purple-500" />
-          </div>
-          <div className="mt-6">
-            <Link href="/split" className="text-blue-600 hover:text-blue-700 font-semibold">
-              Configure Split Settings →
-            </Link>
-          </div>
+        {/* Money Split Visualization */}
+        <div className="mb-8">
+          <CurrentMoneySplitWidget />
         </div>
 
         {/* Recent Transactions */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Transactions</h2>
+        <div
+          className="rounded-xl shadow-md p-6 mb-8"
+          style={{ backgroundImage: "var(--card)" }}
+        >
+          <h2 className="text-xl font-bold text-(--foreground) mb-4">
+            Recent Transactions
+          </h2>
           <div className="space-y-4">
-            <TransactionItem
-              date="2024-01-15"
-              description="Remittance to Family"
-              amount="$300"
-              status="completed"
-            />
-            <TransactionItem
-              date="2024-01-10"
-              description="Bill Payment - Electricity"
-              amount="$50"
-              status="completed"
-            />
-            <TransactionItem
-              date="2024-01-08"
-              description="Savings Goal - Education"
-              amount="$100"
-              status="completed"
-            />
+            {recentTransactions.map((transaction) => (
+              <TransactionHistoryItem key={transaction.id} transaction={transaction} />
+            ))}
           </div>
           <div className="mt-6">
-            <Link href="/transactions" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link
+              href="/transactions"
+              className="text-blue-600 hover:text-blue-700 font-semibold"
+            >
               View All Transactions →
             </Link>
           </div>
         </div>
 
-        {/* Savings Goals Progress */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Savings Goals</h2>
-          <div className="space-y-4">
-            <GoalProgress
-              name="Education Fund"
-              current={360}
-              target={1000}
-              deadline="2025-12-31"
-            />
-            <GoalProgress
-              name="Medical Emergency"
-              current={180}
-              target={500}
-              deadline="2024-06-30"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Savings Goals Progress */}
+          <div
+            className="rounded-2xl shadow-md p-6 border border-[#FFFFFF14] hover:border-white/30 transition-colors duration-300"
+            style={{ backgroundImage: "var(--card)" }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span>
+                <PiggyBank className="w-6 h-6 text-[var(--accent)]" />
+              </span>
+              <h2 className="text-xl font-bold text-(--foreground)">
+                Savings by Goals
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <GoalProgress
+                name="Emergency Fund"
+                current={331.2}
+                target={720}
+                gradient={{ from: "#B91C1C", to: "#991B1B" }}
+              />
+              <GoalProgress
+                name="Education Fund"
+                current={194}
+                target={550}
+                gradient={{ from: "#991B1B", to: "#7F1D1D" }}
+              />
+              <GoalProgress
+                name="Medical Fund"
+                current={58.9}
+                target={310}
+                gradient={{ from: "#7F1D1D", to: "#5F1515" }}
+              />
+            </div>
           </div>
-          <div className="mt-6">
-            <Link href="/goals" className="text-blue-600 hover:text-blue-700 font-semibold">
-              Manage Goals →
-            </Link>
+
+          {/* Bills by Type */}
+          <div
+            className="rounded-2xl shadow-md p-6 border border-[#FFFFFF14] hover:border-white/30 transition-colors duration-300"
+            style={{ backgroundImage: "var(--card)" }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span>
+                <FileText className="w-6 h-6 text-[var(--accent)]" />
+              </span>
+              <h2 className="text-xl font-bold text-(--foreground)">
+                Bills by Type
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <GoalProgress
+                name="Electricity"
+                current={133}
+                target={285}
+                gradient={{ from: "#991B1B", to: "#7F1D1D" }}
+              />
+              <GoalProgress
+                name="Water"
+                current={48}
+                target={180}
+                gradient={{ from: "#7F1D1D", to: "#5F1515" }}
+              />
+              <GoalProgress
+                name="Internet"
+                current={22}
+                target={120}
+                gradient={{ from: "#5F1515", to: "#4F1111" }}
+              />
+              <GoalProgress
+                name="Phone"
+                current={14}
+                target={100}
+                gradient={{ from: "#5F1515", to: "#4F1111" }}
+              />
+            </div>
           </div>
         </div>
       </main>
     </div>
-  )
-}
-
-function StatCard({ title, value, change, icon, trend }: { title: string, value: string, change: string, icon: React.ReactNode, trend: 'up' | 'down' | 'neutral' }) {
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-gray-600 text-sm">{title}</div>
-        <div className="text-blue-600">{icon}</div>
-      </div>
-      <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-      <div className={`text-sm ${trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
-        {change}
-      </div>
-    </div>
-  )
-}
-
-function SplitBar({ label, amount, percentage, color }: { label: string, amount: number, percentage: number, color: string }) {
-  return (
-    <div>
-      <div className="flex justify-between mb-2">
-        <span className="text-gray-700 font-medium">{label}</span>
-        <span className="text-gray-900 font-semibold">${amount} ({percentage}%)</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-3">
-        <div className={`${color} h-3 rounded-full`} style={{ width: `${percentage}%` }}></div>
-      </div>
-    </div>
-  )
-}
-
-function TransactionItem({ date, description, amount, status }: { date: string, description: string, amount: string, status: string }) {
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-      <div>
-        <div className="font-medium text-gray-900">{description}</div>
-        <div className="text-sm text-gray-500">{date}</div>
-      </div>
-      <div className="text-right">
-        <div className="font-semibold text-gray-900">{amount}</div>
-        <div className="text-sm text-green-600">{status}</div>
-      </div>
-    </div>
-  )
-}
-
-function GoalProgress({ name, current, target, deadline }: { name: string, current: number, target: number, deadline: string }) {
-  const percentage = Math.min((current / target) * 100, 100)
-  
-  return (
-    <div>
-      <div className="flex justify-between mb-2">
-        <span className="font-medium text-gray-900">{name}</span>
-        <span className="text-gray-600 text-sm">${current} / ${target}</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-        <div className="bg-green-500 h-3 rounded-full" style={{ width: `${percentage}%` }}></div>
-      </div>
-      <div className="text-sm text-gray-500">Target: {deadline}</div>
-    </div>
-  )
+  );
 }
 

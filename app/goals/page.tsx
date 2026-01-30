@@ -1,31 +1,25 @@
-import Link from 'next/link'
-import { ArrowLeft, Plus, Target, Calendar, DollarSign } from 'lucide-react'
+'use client'
+
+import { Target, Calendar } from 'lucide-react'
+import PageHeader from '@/components/PageHeader'
 
 export default function SavingsGoals() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-600 hover:text-gray-900">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Savings Goals</h1>
-            </div>
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center space-x-2"
-              disabled
-            >
-              <Plus className="w-5 h-5" />
-              <span>New Goal</span>
-            </button>
-          </div>
-        </div>
-      </header>
+  function handleNewGoal() {
+    // TODO: Open create-goal flow or modal
+  }
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <div className="min-h-screen bg-[#010101]">
+      <PageHeader
+        title="Savings Goals"
+        subtitle="Track and achieve your financial dreams"
+        ctaLabel="New Goal"
+        onCtaClick={handleNewGoal}
+        showBottomDivider
+        ctaVariant="redOrange"
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Goals Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <GoalCard
@@ -52,24 +46,24 @@ export default function SavingsGoals() {
         </div>
 
         {/* Create Goal Form Placeholder */}
-        <div className="mt-8 bg-white rounded-xl shadow-md p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Create New Savings Goal</h2>
+        <div className="mt-8 bg-[#0f0f0f] rounded-xl border border-white/5 p-8">
+          <h2 className="text-xl font-bold text-white mb-6">Create New Savings Goal</h2>
           <form className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-400 mb-2">
                 Goal Name
               </label>
               <input
                 type="text"
                 placeholder="e.g., Education, Medical, Marriage"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-white/10 rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 disabled
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-400 mb-2">
                   Target Amount (USD)
                 </label>
                 <div className="relative">
@@ -79,19 +73,19 @@ export default function SavingsGoals() {
                     placeholder="1000.00"
                     step="0.01"
                     min="0"
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-white/10 rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     disabled
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-400 mb-2">
                   Target Date
                 </label>
                 <input
                   type="date"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-white/10 rounded-lg bg-[#1a1a1a] text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   disabled
                 />
               </div>
@@ -99,7 +93,7 @@ export default function SavingsGoals() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+              className="w-full bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-500 transition"
               disabled
             >
               Create Goal
@@ -108,8 +102,8 @@ export default function SavingsGoals() {
         </div>
 
         {/* Integration Note */}
-        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-800">
+        <div className="mt-6 bg-amber-950/30 border border-amber-800/50 rounded-lg p-4">
+          <p className="text-sm text-amber-200">
             <strong>Integration Required:</strong> Connect to savings_goals smart contract to create goals, 
             add funds, and track progress. Display visual progress bars and completion status.
           </p>
@@ -124,33 +118,33 @@ function GoalCard({ name, current, target, deadline, description }: { name: stri
   const remaining = target - current
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="bg-[#0f0f0f] rounded-xl border border-white/5 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <Target className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
+          <Target className="w-5 h-5 text-orange-500" />
+          <h3 className="text-lg font-semibold text-white">{name}</h3>
         </div>
-        <span className="text-sm text-gray-500">{percentage.toFixed(0)}%</span>
+        <span className="text-sm text-gray-400">{percentage.toFixed(0)}%</span>
       </div>
 
-      <p className="text-sm text-gray-600 mb-4">{description}</p>
+      <p className="text-sm text-gray-400 mb-4">{description}</p>
 
       <div className="mb-4">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-600">Progress</span>
-          <span className="font-semibold text-gray-900">${current} / ${target}</span>
+          <span className="text-gray-400">Progress</span>
+          <span className="font-semibold text-white">${current} / ${target}</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div className="bg-green-500 h-3 rounded-full" style={{ width: `${percentage}%` }}></div>
+        <div className="w-full bg-white/10 rounded-full h-3">
+          <div className="bg-orange-500 h-3 rounded-full" style={{ width: `${percentage}%` }}></div>
         </div>
       </div>
 
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center space-x-2 text-gray-600">
+        <div className="flex items-center space-x-2 text-gray-400">
           <Calendar className="w-4 h-4" />
           <span>{deadline}</span>
         </div>
-        <div className="text-gray-900 font-semibold">
+        <div className="text-white font-semibold">
           ${remaining} remaining
         </div>
       </div>

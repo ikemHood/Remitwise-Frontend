@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
   Wallet,
   Bell,
   Globe,
@@ -18,9 +17,17 @@ import {
   ExternalLink,
   Mail,
   ChevronRight,
+  CheckCircle,
+  Zap,
+  AlertCircle,
+  Languages,
+  Moon,
+  ChevronDown,
 } from "lucide-react";
 import SettingsSection from "@/components/SettingsSection";
 import SettingsItem from "@/components/SettingsItem";
+import SettingsHeader from "@/components/SettingsHeader";
+import PreferencesRow from "@/components/PreferencesRow";
 
 export default function SettingsPage() {
   // Mock state for settings
@@ -28,30 +35,22 @@ export default function SettingsPage() {
     billReminders: true,
     paymentConfirmations: true,
     goalUpdates: false,
+    securityAlerts: true,
   });
 
   const [security, setSecurity] = useState({
     transactionSigning: true,
   });
 
+  const [currency, setCurrency] = useState("USD");
+
   const stellarAddress = "GCF2...7P3Q";
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center">
-          <Link
-            href="/dashboard"
-            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <h1 className="ml-4 text-xl font-bold text-gray-900">Settings</h1>
-        </div>
-      </header>
+<main className="w-full min-h-screen bg-[#0F0F0F] md:px-[171.5px] px-[16px] font-inter">
+  <SettingsHeader />
 
-      <div className="max-w-3xl mx-auto py-6">
+      <div className="w-full py-6">
         {/* Account Section */}
         <SettingsSection title="Account">
           <SettingsItem
@@ -75,56 +74,184 @@ export default function SettingsPage() {
         </SettingsSection>
 
         {/* Notifications Section */}
-        <SettingsSection title="Notifications">
-          <SettingsItem
-            icon={<Bell className="w-5 h-5" />}
-            title="Bill Reminders"
-            description="Get notified before bills are due"
-            type="toggle"
-            enabled={notifications.billReminders}
-            onToggle={(val) =>
-              setNotifications({ ...notifications, billReminders: val })
-            }
-          />
-          <SettingsItem
-            icon={<Bell className="w-5 h-5" />}
-            title="Payment Confirmations"
-            description="Receive receipt after every transfer"
-            type="toggle"
-            enabled={notifications.paymentConfirmations}
-            onToggle={(val) =>
-              setNotifications({ ...notifications, paymentConfirmations: val })
-            }
-          />
-          <SettingsItem
-            icon={<Bell className="w-5 h-5" />}
-            title="Goal Progress Updates"
-            description="Weekly summary of your savings goals"
-            type="toggle"
-            enabled={notifications.goalUpdates}
-            onToggle={(val) =>
-              setNotifications({ ...notifications, goalUpdates: val })
-            }
-          />
-        </SettingsSection>
+        <div className="mb-8 bg-[#010101] p-4">
+          {/* Section header (matches your sample UI) */}
+          <div className="px-4 mb-3">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center justify-center bg-[#DC262633] w-[40px] h-[40px] rounded-[14px]">
+                <Bell className="w-[20px] h-[20px] text-[#DC2626]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[#FFFFFF]">
+                  Notifications
+                </h2>
+                <p className="text-[#FFFFFF80] text-[12px] -mt-1">
+                  Manage alert preferences
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Dark card list */}
+          <SettingsSection title="" variant="dark-card">
+            <SettingsItem
+              variant="notification-row"
+              divider
+              icon={<FileText className="w-5 h-5" />}
+              title="Bill Reminders"
+              description="Get notified before bills are due"
+              type="toggle"
+              enabled={notifications.billReminders}
+              onToggle={(val) =>
+                setNotifications({ ...notifications, billReminders: val })
+              }
+            />
+            <SettingsItem
+              variant="notification-row"
+              divider
+              icon={<CheckCircle className="w-5 h-5" />}
+              title="Payment Confirmations"
+              description="Receive transaction confirmations"
+              type="toggle"
+              enabled={notifications.paymentConfirmations}
+              onToggle={(val) =>
+                setNotifications({
+                  ...notifications,
+                  paymentConfirmations: val,
+                })
+              }
+            />
+            <SettingsItem
+              variant="notification-row"
+              divider
+              icon={<Zap className="w-5 h-5" />}
+              title="Goal Progress Updates"
+              description="Track savings goal milestones"
+              type="toggle"
+              enabled={notifications.goalUpdates}
+              onToggle={(val) =>
+                setNotifications({ ...notifications, goalUpdates: val })
+              }
+            />
+            <SettingsItem
+              variant="notification-row"
+              icon={<AlertCircle className="w-5 h-5" />}
+              title="Security Alerts"
+              description="Important security notifications"
+              type="toggle"
+              enabled={notifications.securityAlerts}
+              onToggle={(val) =>
+                setNotifications({ ...notifications, securityAlerts: val })
+              }
+            />
+          </SettingsSection>
+
+          {/* <div className="px-4 mt-4 text-center">
+            <p className="text-gray-500 text-xs">
+              Notification preferences are saved locally and will persist across
+              sessions.
+            </p>
+          </div> */}
+        </div>
 
         {/* Preferences Section */}
-        <SettingsSection title="Preferences">
-          <SettingsItem
-            icon={<Globe className="w-5 h-5" />}
-            title="Currency Display"
-            description="Primary currency for dashboard"
-            type="text"
-            value="USD ($)"
-          />
-          <SettingsItem
-            icon={<MessageSquare className="w-5 h-5" />}
-            title="Language"
-            description="Default app language"
-            type="text"
-            value="English"
-          />
-        </SettingsSection>
+        {/* Preferences Section - Custom Dark Theme Implementation */}
+        <div className="bg-black p-6 mb-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-10 w-10 flex items-center justify-center bg-[#DC262633] rounded-xl">
+              <Globe className="w-5 h-5 text-[#DC2626]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Preferences</h2>
+              <p className="text-sm text-gray-400">Customize your experience</p>
+            </div>
+          </div>
+
+          <div className="bg-[#0F0F0F] border border-[#FFFFFF14] rounded-3xl overflow-hidden">
+            {/* Currency Row */}
+            <PreferencesRow
+              icon={<span className="text-xl">$</span>}
+              title="Currency Display"
+              subtitle="Default currency for amounts"
+              rightContent={
+                <div className="relative">
+                  <select
+                    className="w-full bg-[#FFFFFF0D] text-white text-sm rounded-lg px-4 py-2 pr-8 appearance-none border border-zinc-800 focus:outline-none focus:border-[#FF4500]"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                  >
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                    <ChevronDown className="w-5 h-5 text-gray-300" />
+                  </div>
+                </div>
+              }
+            />
+
+            {/* Language Row */}
+            <PreferencesRow
+              icon={<Languages className="w-5 h-5" />}
+              title={
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-white text-[14px] md:text-[16px]">Language</span>
+                  <span className="px-2 py-0.5 text-[10px] font-bold text-[#DC2626] border border-[#DC262633] bg-[#DC26261A] rounded-full uppercase tracking-wider">
+                    Coming Soon
+                  </span>
+                </div>
+              }
+              subtitle="App display language"
+              rightContent={
+                <div className="relative w-full">
+                  <select
+                    className="w-full bg-[#FFFFFF0D] text-gray-500 text-sm rounded-lg px-4 py-2 pr-8 appearance-none border border-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                    defaultValue="English"
+                  >
+                    <option>English</option>
+                    <option>Spanish</option>
+                    <option>French</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                    <ChevronDown className="w-5 h-5 text-gray-300" />
+                  </div>
+                </div>
+              }
+            />
+
+            {/* Theme Row */}
+            <PreferencesRow
+              icon={<Moon className="w-5 h-5" />}
+              title={
+                <div className="flex items-center justify-between w-full">
+                  <span>Theme</span>
+                  <span className="px-2 py-0.5 text-[10px] font-bold text-[#DC2626] border border-[#DC262633] bg-[#DC26261A] rounded-full uppercase tracking-wider">
+                    Coming Soon
+                  </span>
+                </div>
+              }
+              subtitle="Visual appearance"
+              rightContent={
+                <div className="relative w-full">
+                  <select
+                    className="w-full bg-[#FFFFFF0D] text-gray-500 text-sm rounded-lg px-4 py-2 pr-8 appearance-none border border-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                    defaultValue="Dark"
+                  >
+                    <option>Dark</option>
+                    <option>Light</option>
+                    <option>System</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                    <ChevronDown className="w-5 h-5 text-gray-300" />
+                  </div>
+                </div>
+              }
+            />
+          </div>
+        </div>
 
         {/* Security Section */}
         <SettingsSection title="Security">

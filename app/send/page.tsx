@@ -5,6 +5,7 @@ import EmergencyTransferModal from './components/EmergencyTransferModal'
 
 import Link from 'next/link'
 import { ArrowLeft, Send, AlertCircle } from 'lucide-react'
+import SendHeader from './components/SendHeader'
 
 export default function SendMoney() {
   const [showEmergencyModal, setShowEmergencyModal] = useState(false)
@@ -12,17 +13,8 @@ export default function SendMoney() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Send Remittance</h1>
-          </div>
-        </div>
-      </header>
-
+      <SendHeader />
+    
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-md p-8">
           <div className="mb-6">

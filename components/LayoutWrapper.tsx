@@ -8,7 +8,10 @@ import FinalCallToAction from "@/components/FinalCallToAction";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const isExcluded = pathname === '/transactions';
+    const isExcluded =
+        pathname === "/transactions" ||
+        pathname.startsWith("/dashboard") ||
+        pathname === "/financial-insights";
 
     if (isExcluded) {
         return <>{children}</>;

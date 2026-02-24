@@ -41,6 +41,8 @@ All protected routes return `401 Unauthorized` if no valid session exists.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/user/profile` | Get user profile |
+| GET | `/api/split` | Get current split configuration |
+| GET | `/api/split/calculate?amount=100` | Calculate split amounts for given amount |
 | POST | `/api/split` | Configure money split |
 | GET | `/api/goals` | List savings goals |
 | POST | `/api/goals` | Create savings goal |
@@ -84,3 +86,47 @@ All protected routes return `401 Unauthorized` if no valid session exists.
 - All protected routes use `withAuth` wrapper
 - Signature verification not yet implemented (TODO)
 - Session storage in database not yet implemented (TODO)
+
+## Contract Integration
+
+### Environment Variables
+
+The following environment variables must be configured:
+
+- `STELLAR_NETWORK`: Network to use (`testnet` or `mainnet`, defaults to `testnet`)
+- `REMITTANCE_SPLIT_CONTRACT_ID`: Deployed remittance split contract address
+
+**Important**: The remittance_split contract must be deployed on the specified network before the split API endpoints will work.
+
+### Split API Responses
+
+**GET /api/split**
+```json
+{
+  "percentages": {
+    "savings": 30,
+    "bills": 25,
+    "insurance": 10,
+    "family": 20
+  }
+}
+```
+
+**GET /api/split/calculate?amount=1000**
+```json
+{
+  "amounts": {
+    "savings": "300",
+    "bills": "250",
+    "insurance": "100",
+    "family": "200",
+    "remainder": "150"
+  }
+}
+```
+
+### Error Handling
+
+- `404 Not Found`: Contract not deployed or split not configured
+- `500 Internal Server Error`: RPC connection error or contract read failure
+- `400 Bad Request`: Invalid parameters (calculate endpoint)

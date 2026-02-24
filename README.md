@@ -125,3 +125,29 @@ remitwise-frontend/
 
 MIT
 
+**API Versioning**
+
+- **Approach (decided):** URL prefix versioning using `/api/v{n}/...` (e.g. `/api/v1/...`). This is simple to route, cache, and reason about in the frontend and server layers.
+- **Current status:** The existing API surface in this repository is labeled as **v1**. To avoid breaking existing clients, the app rewrites `/api/*` to `/api/v1/*` at the Next.js layer so existing clients can continue using `/api/...` without changes.
+- **Routes:** When adding new server routes, prefer placing them under `app/api/v1/` (or `pages/api/v1/` if using pages router) so they are clearly versioned. Optionally duplicate stable v1 routes under the `v1` namespace during a migration window rather than deleting the legacy route immediately.
+- **How to introduce v2:** Create a new `app/api/v2/` namespace containing the new behavior. Update platform routes or API gateway rules to expose `/api/v2/...` and leave the rewrite in place so `/api/*` stays mapped to the last published stable version (v1) until you intentionally change it.
+
+**Deprecation Policy**
+
+- When a new major version (e.g. v2) is released, older major versions will be supported for a minimum of **6 months** before scheduled removal. During that window:
+   - Maintain security fixes and critical bug fixes for the deprecated major version.
+   - Announce deprecation clearly in changelogs and developer docs with migration guides.
+   - Provide automated redirects or compatibility layers where feasible.
+
+**OpenAPI / API Documentation**
+
+- This repository contains an OpenAPI descriptor for the current v1 API at `openapi.yaml` (root). The `servers` entry points to the `/api/v1` base path. Update `openapi.yaml` as you add endpoints.
+
+**Non-breaking guarantee**
+
+- To meet the repository's backward-compatibility requirement, we keep `/api/*` behavior unchanged by rewriting it to `/api/v1/*`. This preserves compatibility for existing consumers.
+
+If you want, I can also:
+- Move or duplicate any existing API route files into an explicit `app/api/v1/` folder.
+- Expand `openapi.yaml` with concrete endpoint definitions from your backend contract or tests.
+

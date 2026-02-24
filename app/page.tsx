@@ -10,6 +10,7 @@ import {
   Users,
   TrendingUp,
 } from "lucide-react";
+import AllocationStatusCard from "@/components/AllocationStatusCard";
 import FAQSection from "@/components/FAQSection";
 import FeatureSection from "@/components/FeatureSection";
 import WalletDropdown from "@/components/WalletDropdown";
@@ -27,11 +28,11 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-brand-dark from-blue-50 to-indigo-100">
       {/* Hero Section */}
-      <Hero/>
-<StatsSection />
+      <Hero />
+      <StatsSection />
       {/* Value Proposition Section */}
       <ValueProposition />
-        
+
       {/* Highlight Feature Cards - Instant Remittance & Smart Allocation */}
       <div className="max-w-7xl mx-auto bg-[#0a0a0a] rounded-3xl p-6 mb-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -54,9 +55,11 @@ export default function Home() {
       {/* Why Choose Stellar Section */}
       <WhyChooseStellar />
 
-        {/* Pricing Section */}
-        <PricingSection />
-
+      {/* Pricing Section */}
+      <PricingSection />
+      <div className="flex justify-center py-20 bg-black">
+        <AllocationStatusCard percentage={100} />
+      </div>
       {/* FAQ Section */}
       <FAQSection />
     </main>
@@ -75,9 +78,7 @@ function HighlightCard({
   return (
     <div className="bg-[#141414] border border-[#232323] rounded-2xl p-7 pb-12 flex items-start gap-4">
       <div className="w-11 h-11 bg-[#1c1010] border border-[#2a1515] rounded-lg flex items-center justify-center flex-shrink-0">
-        <div className="text-red-500">
-          {icon}
-        </div>
+        <div className="text-red-500">{icon}</div>
       </div>
       <div>
         <h3 className="text-xl font-bold text-white">{title}</h3>

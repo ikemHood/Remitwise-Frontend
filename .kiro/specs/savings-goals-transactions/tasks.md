@@ -39,7 +39,7 @@
   - **Property 4: XDR Format Validity**
   - **Validates: Requirements 1.4, 2.5, 3.5, 4.4, 5.4**
 
-- [ ] 4. Implement session authentication utilities
+- [x] 4. Implement session authentication utilities
   - Create `lib/auth/session.ts` for session extraction
   - Implement function to extract public key from session
   - Implement function to validate session existence
@@ -49,7 +49,7 @@
   - **Property 3: Authentication Consistency**
   - **Validates: Requirements 2.4, 3.4, 4.3, 5.3**
 
-- [ ] 5. Implement error handling utilities
+- [x] 5. Implement error handling utilities
   - Create `lib/errors/api-errors.ts` for error response formatting
   - Implement function to create 400 validation error responses
   - Implement function to create 401 authentication error responses

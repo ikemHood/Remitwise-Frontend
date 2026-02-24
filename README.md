@@ -153,3 +153,70 @@ Response shape for all paginated endpoints:
 
 MIT
 
+**API Versioning**
+
+- **Approach (decided):** URL prefix versioning using `/api/v{n}/...` (e.g. `/api/v1/...`). This is simple to route, cache, and reason about in the frontend and server layers.
+- **Current status:** The existing API surface in this repository is labeled as **v1**. To avoid breaking existing clients, the app rewrites `/api/*` to `/api/v1/*` at the Next.js layer so existing clients can continue using `/api/...` without changes.
+- **Routes:** When adding new server routes, prefer placing them under `app/api/v1/` (or `pages/api/v1/` if using pages router) so they are clearly versioned. Optionally duplicate stable v1 routes under the `v1` namespace during a migration window rather than deleting the legacy route immediately.
+- **How to introduce v2:** Create a new `app/api/v2/` namespace containing the new behavior. Update platform routes or API gateway rules to expose `/api/v2/...` and leave the rewrite in place so `/api/*` stays mapped to the last published stable version (v1) until you intentionally change it.
+
+**Deprecation Policy**
+
+- When a new major version (e.g. v2) is released, older major versions will be supported for a minimum of **6 months** before scheduled removal. During that window:
+   - Maintain security fixes and critical bug fixes for the deprecated major version.
+   - Announce deprecation clearly in changelogs and developer docs with migration guides.
+   - Provide automated redirects or compatibility layers where feasible.
+
+**OpenAPI / API Documentation**
+
+- This repository contains an OpenAPI descriptor for the current v1 API at `openapi.yaml` (root). The `servers` entry points to the `/api/v1` base path. Update `openapi.yaml` as you add endpoints.
+
+**Non-breaking guarantee**
+
+- To meet the repository's backward-compatibility requirement, we keep `/api/*` behavior unchanged by rewriting it to `/api/v1/*`. This preserves compatibility for existing consumers.
+
+If you want, I can also:
+- Move or duplicate any existing API route files into an explicit `app/api/v1/` folder.
+- Expand `openapi.yaml` with concrete endpoint definitions from your backend contract or tests.
+
+API Endpoints (v1)
+
+- `POST /api/bills` — Create bill transaction XDR
+   - Request headers: `x-user` (caller public key)
+   - Body: `{ name, amount, dueDate, recurring, frequencyDays }`
+   - Validations: `amount > 0`, `dueDate` valid ISO date, when `recurring === true` then `frequencyDays > 0`.
+   - Response: `{ xdr: string }` — unsigned transaction XDR ready for the frontend to sign and submit.
+
+- `POST /api/bills/[id]/pay` — Build pay-bill transaction XDR
+   - Request headers: `x-user` (caller public key)
+   - Response: `{ xdr: string }`
+
+- `POST /api/bills/[id]/cancel` — Build cancel-bill transaction XDR
+   - Request headers: `x-user` (caller public key)
+   - Optional owner-only enforcement: set header `x-owner-only: 1` and `x-owner` to require the caller match the owner.
+   - Response: `{ xdr: string }`
+
+Notes:
+- These endpoints return a transaction XDR composed of `manageData` operations that encode the requested action. The frontend should sign the returned XDR and submit it to Horizon (or via a backend submission endpoint) to complete the operation.
+- Server builds transactions using the Horizon URL in `HORIZON_URL` and network passphrase in `NETWORK_PASSPHRASE` (defaults to testnet). Set these environment variables in production to use a different network.
+
+Insurance endpoints (v1)
+
+- `POST /api/insurance` — Create policy transaction XDR
+   - Request headers: `x-user` (caller public key)
+   - Body: `{ name, coverageType, monthlyPremium, coverageAmount }`
+   - Validations: `monthlyPremium > 0`, `coverageAmount > 0`, required `name` and `coverageType`.
+   - Response: `{ xdr: string }` — unsigned transaction XDR ready for the frontend to sign and submit.
+
+- `POST /api/insurance/[id]/pay` — Build pay-premium transaction XDR
+   - Request headers: `x-user` (caller public key)
+   - Response: `{ xdr: string }`
+
+- `POST /api/insurance/[id]/deactivate` — Build deactivate-policy transaction XDR
+   - Request headers: `x-user` (caller public key)
+   - Optional owner-only enforcement: set header `x-owner-only: 1` and `x-owner` to require the caller match the owner.
+   - Response: `{ xdr: string }`
+
+Notes:
+- These endpoints return transaction XDRs composed with `manageData` operations to encode policy actions. If you prefer Soroban contract invocations, I can convert the builders to use contract calls.
+

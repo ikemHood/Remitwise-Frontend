@@ -1,0 +1,20 @@
+openapi: 3.0.3
+info:
+  title: RemitWise Frontend API (v1)
+  version: "1.0.0"
+  description: |
+    This OpenAPI document describes the current v1 API surface for RemitWise.
+
+    Versioning: This repo uses URL-prefix versioning (e.g. /api/v1/...). The existing
+    API is considered v1. To avoid breaking existing clients, the Next.js app
+    rewrites `/api/*` to `/api/v1/*`.
+
+    Deprecation policy: When a new major version is released (for example v2),
+    older major versions will be supported for a minimum of 6 months before
+    removal. Security patches and critical bug fixes will be backported during
+    the deprecation window. Migration guides should be provided for clients.
+servers:
+  - url: /api/v1
+    description: v1 base path (local/dev)
+paths: {}
+components: {}

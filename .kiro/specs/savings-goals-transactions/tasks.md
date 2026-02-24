@@ -26,7 +26,7 @@
   - **Property 6: Goal ID Validation**
   - **Validates: Requirements 2.3, 3.3, 4.2, 5.2**
 
-- [ ] 3. Implement transaction builder functions
+- [x] 3. Implement transaction builder functions
   - Create `lib/contracts/savings-goals.ts` file
   - Implement `buildCreateGoalTx` function with Stellar SDK
   - Implement `buildAddToGoalTx` function

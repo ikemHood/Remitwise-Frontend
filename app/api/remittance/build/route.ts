@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withIdempotency } from '@/lib/idempotency';
 
 /**
- * POST /api/remittance/allocate
- * Allocate funds for a remittance transaction
+ * POST /api/remittance/build
+ * Build a remittance transaction
  * 
  * Supports idempotency via Idempotency-Key header
  */
@@ -16,11 +16,11 @@ export async function POST(request: NextRequest) {
         // }
 
         // Validate request body
-        const { transactionId, walletId, amount } = body;
+        const { amount, recipient, currency } = body;
 
-        if (!transactionId || !walletId || !amount) {
+        if (!amount || !recipient || !currency) {
             return NextResponse.json(
-                { error: 'Missing required fields: transactionId, walletId, amount' },
+                { error: 'Missing required fields: amount, recipient, currency' },
                 { status: 400 }
             );
         }
@@ -32,18 +32,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // TODO: Implement actual allocation logic
+        // TODO: Implement actual remittance building logic
         // For now, return a mock response
-        const allocationId = `alloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         return NextResponse.json({
-            allocationId,
             transactionId,
-            walletId,
             amount,
-            status: 'allocated',
-            allocatedAt: new Date().toISOString(),
-            message: 'Funds allocated successfully',
+            recipient,
+            currency,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            message: 'Remittance transaction built successfully',
         });
     });
 }

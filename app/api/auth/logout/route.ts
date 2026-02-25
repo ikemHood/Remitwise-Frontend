@@ -1,13 +1,8 @@
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
-export async function POST() {
-  const cookieHeader =
-    'remitwise_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Set-Cookie': cookieHeader,
-    },
-  });
+export async function POST(request: NextRequest) {
+  const cookieStore = await cookies();
+  cookieStore.delete('session');
+  return NextResponse.json({ success: true });
 }

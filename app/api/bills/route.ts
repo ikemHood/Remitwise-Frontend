@@ -10,7 +10,7 @@ const billSchema = z.object({
   recurring: z.preprocess((val) => val === "on" || val === true, z.boolean()),
 });
 
-const addBillHandler = validatedRoute(billSchema, async (req, data) => {
+const addBillHandler = validatedRoute(billSchema, "body", async (req, data) => {
   // data is fully typed as { name: string, amount: number, dueDate: Date, recurring: boolean }
 //   console.log(data, 'data in handler');
 

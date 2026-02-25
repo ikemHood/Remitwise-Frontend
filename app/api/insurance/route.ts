@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { validatedRoute } from "@/lib/auth/middleware";
+import { compose, validatedRoute, withAuth } from "@/lib/auth/middleware";
 import { getActivePolicies } from "@/lib/contracts/insurance";
 import { validateAuth, unauthorizedResponse } from "@/lib/auth";
 
@@ -30,16 +30,14 @@ const addInsuranceHandler = validatedRoute(billSchema, "body", async (req, data)
 // export const POST = compose(withAuth)(addInsuranceHandler);
 
 // if you don't need auth on a route, just export directly:
-export const POST = addInsuranceHandler;
+
 
 
 // GET /api/insurance
 // Returns active policies for the authenticated owner.
 // Query param: ?owner=G... (Stellar account address)
-export async function GET(request: NextRequest) {
-  if (!validateAuth(request)) {
-    return unauthorizedResponse();
-  }
+const getInsuranceHandler = async (request: NextRequest)=> {
+
 
   const { searchParams } = new URL(request.url);
   const owner = searchParams.get("owner");
@@ -67,4 +65,9 @@ export async function GET(request: NextRequest) {
       { status: 502 }
     );
   }
+
 }
+
+
+export const POST = compose(withAuth)(addInsuranceHandler);
+export const GET = compose(withAuth)(getInsuranceHandler);

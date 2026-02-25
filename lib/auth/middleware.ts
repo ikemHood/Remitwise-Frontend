@@ -1,10 +1,10 @@
-import { z } from 'zod';
+import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
 export type ActionState = {
   error?: string;
   success?: string;
-  validationErrors?: {path: string, message: string}[]
+  validationErrors?: { path: string; message: string }[];
   [key: string]: any; // This allows for additional properties
 };
 
@@ -119,7 +119,7 @@ export function validatedRoute<T extends z.ZodType>(
           })),
           // ...(result.data ? { fields: result.data })
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -127,12 +127,26 @@ export function validatedRoute<T extends z.ZodType>(
   };
 }
 
-
 type NextHandler = (req: NextRequest) => Promise<NextResponse>;
 
+export function withAuth(handler: NextHandler) {
+  return async (req: NextRequest) => {
+    const authHeader = req.headers.get("authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+
+    if (!token) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+    return handler(req);
+  };
+}
 
 // compose multiple middlewares left to right
-export function compose(...middlewares: Array<(h: NextHandler) => NextHandler>) {
+export function compose(
+  ...middlewares: Array<(h: NextHandler) => NextHandler>
+) {
   return (handler: NextHandler): NextHandler =>
     middlewares.reduceRight((acc, mw) => mw(acc), handler);
 }

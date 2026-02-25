@@ -16,6 +16,11 @@ jobs:
     env:
       TEST_WALLET_ADDRESS: "GDEMOXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
       TEST_SIGNATURE: "mock-signature"
+      # --- ADDED MOCK ENV VARS FOR CI ---
+      SESSION_PASSWORD: "dummy-test-session-password-must-be-32-chars"
+      SOROBAN_RPC_URL: "https://soroban-testnet.stellar.org"
+      SOROBAN_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+      ANCHOR_WEBHOOK_SECRET: "dummy-test-secret"
 
     steps:
       - name: Checkout code

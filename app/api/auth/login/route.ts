@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { Keypair } from '@stellar/stellar-sdk';
+import { getAndClearNonce } from '@/lib/auth-cache';
 import {
   createSession,
   getSessionCookieHeader,
@@ -11,48 +12,47 @@ export const dynamic = 'force-dynamic';
  * Wallet-based auth flow:
  * 1. Frontend: user connects wallet (e.g. Freighter), gets address.
  * 2. Frontend: build a nonce message (e.g. "Sign in to Remitwise at {timestamp}").
- * 3. Frontend: sign message with wallet (Keypair.fromSecretKey(secret).sign(Buffer.from(message, 'utf8'))), encode as base64.
- * 4. Frontend: POST /api/auth/login with { address, message, signature } (credentials sent in body; cookie set in response).
- * 5. Backend: verify with Keypair.fromPublicKey(address).verify(messageBuffer, signatureBuffer); create encrypted session cookie.
- * Env: SESSION_PASSWORD (min 32 chars, e.g. openssl rand -base64 32).
+ * 3. Frontend: sign message with wallet
+ * 4. Frontend: POST /api/auth/login with { address, signature }
+ * 5. Backend: verify with Keypair using stored server memory nonce; create encrypted session cookie.
  */
 
-export interface LoginBody {
-  address: string;
-  signature: string;
-  message: string;
-}
-
-function verifyStellarSignature(
-  address: string,
-  message: string,
-  signatureBase64: string
-): boolean {
+export async function POST(request: Request) {
   try {
-    const keypair = Keypair.fromPublicKey(address);
-    const data = Buffer.from(message, 'utf8');
-    const signature = Buffer.from(signatureBase64, 'base64');
-    return keypair.verify(data, signature);
-  } catch {
-    return false;
-  }
-}
+    const body = await request.json();
+    const { address, signature } = body;
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = (await request.json()) as LoginBody;
-    const { address, signature, message } = body;
-
-    if (!address || !signature || !message) {
-      return Response.json(
-        { error: 'Bad request', message: 'address, signature, and message are required' },
+    if (!address || !signature) {
+      return NextResponse.json(
+        { error: 'Address and signature are required' },
         { status: 400 }
       );
     }
 
-    if (!verifyStellarSignature(address, message, signature)) {
-      return Response.json(
-        { error: 'Unauthorized', message: 'Invalid signature' },
+    // Retrieve and clear nonce — returns null if missing or expired
+    const nonce = getAndClearNonce(address);
+    if (!nonce) {
+      return NextResponse.json(
+        { error: 'Nonce expired or missing. Please request a new nonce.' },
+        { status: 401 }
+      );
+    }
+
+    // Verify signature
+    try {
+      const keypair = Keypair.fromPublicKey(address);
+      // Nonce is stored as hex string; signature is base64 from the client.
+      const isValid = keypair.verify(
+        Buffer.from(nonce, 'hex'),
+        Buffer.from(signature, 'base64')
+      );
+
+      if (!isValid) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } catch {
+      return NextResponse.json(
+        { error: 'Signature verification failed' },
         { status: 401 }
       );
     }
@@ -70,12 +70,9 @@ export async function POST(request: NextRequest) {
         },
       }
     );
+
   } catch (err) {
     console.error('Login error:', err);
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

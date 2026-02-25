@@ -1,24 +1,63 @@
-export const nonceCache = new Map<string, { nonce: string; expiresAt: number }>();
+/**
+ * In-memory nonce cache for wallet-based authentication.
+ *
+ * Each nonce is single-use: getAndClearNonce() atomically reads and
+ * deletes it so replay attacks are impossible.
+ *
+ * TTL: nonces expire after 5 minutes. A background timer sweeps
+ * stale entries every minute so memory doesn't grow unbounded.
+ */
 
-export const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
-export function setNonce(address: string, nonce: string) {
-    nonceCache.set(address, {
-        nonce,
-        expiresAt: Date.now() + NONCE_TTL_MS,
-    });
+interface NonceEntry {
+  nonce: string;
+  expiresAt: number; // ms epoch
 }
 
-export function getAndClearNonce(address: string): string | null {
-    const data = nonceCache.get(address);
-    if (!data) return null;
+const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const SWEEP_INTERVAL_MS = 60 * 1000; // 1 minute
 
-    // Always delete the nonce after retrieving it to prevent replay attacks
-    nonceCache.delete(address);
+const cache = new Map<string, NonceEntry>();
 
-    if (Date.now() > data.expiresAt) {
-        return null; // Expired
+// ── Sweep expired entries ──────────────────────
+// setInterval keeps the module alive in long-running processes;
+// unref() prevents it from blocking process exit in tests/CLI.
+const sweepTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [address, entry] of cache.entries()) {
+    if (entry.expiresAt <= now) {
+      cache.delete(address);
     }
+  }
+}, SWEEP_INTERVAL_MS);
 
-    return data.nonce;
+if (typeof sweepTimer.unref === 'function') {
+  sweepTimer.unref();
+}
+
+// ── Public API ─────────────────────────────────
+
+/**
+ * Stores a nonce for `address`, overwriting any previous entry.
+ * The nonce expires after NONCE_TTL_MS milliseconds.
+ */
+export function setNonce(address: string, nonce: string): void {
+  cache.set(address, { nonce, expiresAt: Date.now() + NONCE_TTL_MS });
+}
+
+/**
+ * Retrieves and immediately deletes the nonce for `address`.
+ * Returns `null` if no nonce exists or it has expired.
+ *
+ * The atomic read-then-delete prevents replay attacks.
+ */
+export function getAndClearNonce(address: string): string | null {
+  const entry = cache.get(address);
+  if (!entry) return null;
+
+  // Always delete — even if expired — to keep cache clean.
+  cache.delete(address);
+
+  if (entry.expiresAt <= Date.now()) return null;
+
+  return entry.nonce;
 }

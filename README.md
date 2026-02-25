@@ -25,6 +25,11 @@ The frontend includes placeholder pages and components for:
 
 ## Getting Started
 
+### Environment Configuration
+The application requires connection to a Soroban RPC node.
+- **Testnet:** `https://soroban-testnet.stellar.org` (Passphrase: `Test SDF Network ; September 2015`)
+- **Mainnet:** `https://soroban-rpc.stellar.org` (Passphrase: `Public Global Stellar Network ; September 2015`)
+
 ### Prerequisites
 
 - Node.js 18+ 
@@ -57,6 +62,29 @@ npm run build
 npm start
 ```
 
+### Running lint and tests locally
+
+CI runs the same commands on push/PR to `main` and `dev`. To run them locally:
+
+```bash
+# Lint
+npm run lint
+
+# Unit tests
+npm run test
+# or
+npm run test:unit
+
+# Integration tests (optional; uses .env.test or TEST_* env vars)
+npm run test:integration
+```
+
+**Test environment:** Use a `.env.test` file in the project root (or set `TEST_*` env vars) for integration tests. Example variables:
+
+- `TEST_SOROBAN_RPC_URL` – Soroban RPC endpoint (optional)
+- `TEST_DATABASE_URL` – Database URL for integration tests (optional; skip if not required)
+
+CI loads `.env.test` when present and can use `TEST_SOROBAN_RPC_URL` and `TEST_DATABASE_URL` from GitHub Secrets. The pipeline fails if lint or any test step fails.
 ### Authentication & Signature Verification
 
 RemitWise implements a nonce-based challenge-response authentication mechanism to verify genuine wallet ownership over the Stellar network.

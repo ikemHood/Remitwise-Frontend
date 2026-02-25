@@ -31,6 +31,14 @@ export function middleware(request: NextRequest) {
         }
     }
 
+    // 0. Whitelist test environments (Playwright E2E)
+    if (
+        request.headers.get('x-playwright-test') === 'true' &&
+        process.env.NODE_ENV !== 'production'
+    ) {
+        return NextResponse.next();
+    }
+
     // 1. Whitelist Health Check
     if (pathname === '/api/health' || pathname.startsWith('/api/health/')) {
         return NextResponse.next();

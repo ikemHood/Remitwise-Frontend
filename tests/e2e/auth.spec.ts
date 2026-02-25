@@ -24,6 +24,7 @@ test.describe('Authentication and Protected Flow', () => {
         const loginResponse = await page.request.post('/api/auth/login', {
             data: {
                 address,
+                message: nonce,
                 signature
             }
         });
@@ -48,7 +49,7 @@ test.describe('Authentication and Protected Flow', () => {
         const invalidSignature = signatureBuffer.toString('base64');
 
         const loginResponse = await page.request.post('/api/auth/login', {
-            data: { address, signature: invalidSignature }
+            data: { address, message: nonce, signature: invalidSignature }
         });
 
         // Assert failure
@@ -65,7 +66,7 @@ test.describe('Authentication and Protected Flow', () => {
         const signature = signatureBuffer.toString('base64');
 
         const loginResponse = await page.request.post('/api/auth/login', {
-            data: { address, signature }
+            data: { address, message: 'deadbeef', signature }
         });
 
         // Assert failure due to missing nonce

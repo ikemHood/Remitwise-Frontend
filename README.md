@@ -26,13 +26,15 @@ The frontend includes placeholder pages and components for:
 ## Getting Started
 
 ### Environment Configuration
+
 The application requires connection to a Soroban RPC node.
+
 - **Testnet:** `https://soroban-testnet.stellar.org` (Passphrase: `Test SDF Network ; September 2015`)
 - **Mainnet:** `https://soroban-rpc.stellar.org` (Passphrase: `Public Global Stellar Network ; September 2015`)
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
@@ -62,34 +64,64 @@ npm run build
 npm start
 ```
 
-### Running lint and tests locally
+### Testing
 
-CI runs the same commands on push/PR to `main` and `dev`. To run them locally:
+The project includes unit tests and integration tests for API routes.
+
+#### Running Tests
 
 ```bash
-# Lint
-npm run lint
+# Run all tests (unit + integration)
+npm test
 
-# Unit tests
-npm run test
-# or
+# Run unit tests only
 npm run test:unit
 
-# Integration tests (optional; uses .env.test or TEST_* env vars)
+# Run integration tests only
 npm run test:integration
+
+# Run integration tests in watch mode
+npm run test:integration:watch
 ```
 
-**Test environment:** Use a `.env.test` file in the project root (or set `TEST_*` env vars) for integration tests. Example variables:
+#### Unit Tests
 
-- `TEST_SOROBAN_RPC_URL` – Soroban RPC endpoint (optional)
-- `TEST_DATABASE_URL` – Database URL for integration tests (optional; skip if not required)
+- **Location**: `tests/unit/`
+- **Command**: `npm run test:unit`
+- **Framework**: Node.js built-in `test` module
 
-CI loads `.env.test` when present and can use `TEST_SOROBAN_RPC_URL` and `TEST_DATABASE_URL` from GitHub Secrets. The pipeline fails if lint or any test step fails.
+#### Integration Tests
+
+- **Location**: `tests/integration/`
+- **Command**: `npm run test:integration`
+- **Framework**: Node.js `node:test` + direct route handler calls
+- **Database**: In-memory SQLite (fast, isolated)
+- **Speed**: Sub-10 second execution
+
+**What's Tested:**
+
+- `GET /api/health` - Health check (no auth required)
+- `POST /api/auth/nonce` - Nonce generation
+- `POST /api/auth/login` - Authentication with signature
+- `POST /api/auth/logout` - Session cleanup
+- `GET /api/split` - Protected route with auth enforcement
+- Error handling (400, 401, 404 responses)
+
+**How They Work:**
+Integration tests import route handlers directly and call them as functions with mock requests. No server startup overhead, fully deterministic.
+
+**Documentation**: See [docs/TESTING_INTEGRATION.md](docs/TESTING_INTEGRATION.md) for detailed guide on writing and running integration tests.
+
+#### CI Integration
+
+Tests run on GitHub Actions for every push/PR to `main` and `dev`. The pipeline fails if any tests fail.
+
 ### Authentication & Signature Verification
 
 RemitWise implements a nonce-based challenge-response authentication mechanism to verify genuine wallet ownership over the Stellar network.
 
 **Message Format and Verification Steps:**
+
 1. **Request Nonce:** The frontend calls `GET /api/auth/nonce?address=<STELLAR_PUBLIC_KEY>` to receive a securely generated random 32-byte hex string (nonce). This nonce is temporarily cached on the server.
 2. **Sign Nonce:** The client wallet (e.g., Freighter) is prompted to sign the raw nonce. The message to be signed is the byte representation of the hex nonce.
 3. **Submit Signature:** The client submits `{"address": "...", "signature": "..."}` to `POST /api/auth/login`. The signature should be base64-encoded.
@@ -134,6 +166,7 @@ remitwise-frontend/
 See [API Routes Documentation](./docs/API_ROUTES.md) for details on authentication and available endpoints.
 
 **Quick Reference:**
+
 - Public routes: `/api/health`, `/api/auth/*`
 - Protected routes: `/api/user/*`, `/api/split`, `/api/goals`, `/api/bills`, `/api/insurance`, `/api/family`, `/api/send`
 
@@ -179,6 +212,7 @@ See [API Routes Documentation](./docs/API_ROUTES.md) for details on authenticati
 This Next.js application uses API routes to handle backend functionality. API routes are located in the `app/api/` directory and follow Next.js 14 App Router conventions.
 
 **Key API Routes:**
+
 - `/api/auth/*` - Authentication endpoints (wallet connect, nonce generation, signature verification)
 - `/api/transactions/*` - Transaction history and status
 - `/api/contracts/*` - Soroban smart contract interactions
@@ -219,6 +253,101 @@ ANCHOR_PLATFORM_API_KEY=
 
 See `.env.example` for a complete list of configuration options.
 
+### API Middleware Configuration
+
+The middleware (`middleware.ts`) applies CORS headers, security headers, and request validation to all `/api` routes.
+
+#### CORS Policy
+
+Cross-Origin Resource Sharing (CORS) is configured to allow requests from the frontend application:
+
+- **Allowed Origins**: Requests from `NEXT_PUBLIC_APP_URL` are allowed (or same-origin)
+- **Allowed Methods**: GET, POST, PUT, DELETE, PATCH, OPTIONS
+- **Allowed Headers**: Content-Type, Authorization, X-Requested-With
+- **Credentials**: Allowed for same-origin requests
+- **Preflight Handling**: OPTIONS requests return 204 No Content with appropriate CORS headers
+
+**Configuration:**
+
+Set `NEXT_PUBLIC_APP_URL` in `.env.local`:
+
+```bash
+# Frontend URL for CORS policy (e.g., http://localhost:3000)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+**Example: Testing CORS**
+
+```bash
+# Test CORS headers on a preflight request
+curl -i -X OPTIONS http://localhost:3000/api/health \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: POST"
+
+# Response includes:
+# Access-Control-Allow-Origin: http://localhost:3000
+# Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
+# Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With
+```
+
+#### Security Headers
+
+All API responses include the following security headers to protect against common vulnerabilities:
+
+| Header                   | Value           | Purpose                                        |
+| ------------------------ | --------------- | ---------------------------------------------- |
+| `X-Content-Type-Options` | `nosniff`       | Prevents MIME-type sniffing attacks            |
+| `X-Frame-Options`        | `DENY`          | Prevents clickjacking attacks                  |
+| `X-XSS-Protection`       | `1; mode=block` | Legacy XSS protection (modern browsers ignore) |
+| `Vary`                   | `Origin`        | Instructs caches to vary response by origin    |
+
+These headers are applied automatically to all `/api` responses and do not require configuration.
+
+#### Request Body Size Limit
+
+POST, PUT, and PATCH requests are validated for size to prevent oversized payloads:
+
+- **Default Limit**: 1MB (1,048,576 bytes)
+- **Validation**: Checks `Content-Length` header first, falls back to reading body if header missing
+- **Response**: 413 Payload Too Large with JSON error details if exceeded
+
+**Configuration:**
+
+```bash
+# Maximum request body size in bytes (default 1MB)
+API_MAX_BODY_SIZE=1048576
+```
+
+**Example: Testing Body Size Validation**
+
+```bash
+# Valid request (under 1MB)
+curl -i -X POST http://localhost:3000/api/test \
+  -H "Content-Type: application/json" \
+  -d '{"data":"test"}'
+# Response: 200 OK or appropriate handler response
+
+# Oversized request (over 1MB)
+curl -i -X POST http://localhost:3000/api/test \
+  -H "Content-Type: application/json" \
+  -d "$(dd if=/dev/zero bs=1M count=2 2>/dev/null | base64)"
+# Response: 413 Payload Too Large
+# {"error": "Payload Too Large", "message": "Request body exceeds maximum size of 1048576 bytes."}
+```
+
+#### Middleware Flow
+
+The middleware processes requests in the following order:
+
+1. **Whitelist Checks** - Health check and Playwright test requests bypass all middleware
+2. **CORS & Security Headers** - Applied to all responses before processing
+3. **Preflight Handling** - OPTIONS requests return 204 No Content
+4. **Body Size Validation** - POST/PUT/PATCH requests checked against size limit
+5. **Rate Limiting** - Applied after headers/validation (does not block preflight)
+6. **Response** - Headers added to response, request proceeds to handler
+
+This order ensures OPTIONS preflight requests complete successfully while maintaining security and rate limiting enforcement.
+
 ### Running the Backend
 
 The backend API routes run automatically with the Next.js development server:
@@ -243,7 +372,7 @@ RemitWise uses wallet-based authentication with the following flow:
    - User authorizes connection
    - Public key is retrieved
 
-2. **Nonce Generation**: 
+2. **Nonce Generation**:
    - Client requests nonce from `/api/auth/nonce`
    - Server generates unique nonce and stores temporarily
    - Nonce returned to client
@@ -266,15 +395,16 @@ RemitWise uses wallet-based authentication with the following flow:
 
 The application interacts with the following Soroban smart contracts on Stellar:
 
-| Contract | Purpose | Environment Variable |
-|----------|---------|---------------------|
-| Remittance Split | Automatic money allocation | `NEXT_PUBLIC_REMITTANCE_SPLIT_CONTRACT_ID` |
-| Savings Goals | Goal-based savings management | `NEXT_PUBLIC_SAVINGS_GOALS_CONTRACT_ID` |
-| Bill Payments | Bill tracking and payments | `NEXT_PUBLIC_BILL_PAYMENTS_CONTRACT_ID` |
-| Insurance | Micro-insurance policies | `NEXT_PUBLIC_INSURANCE_CONTRACT_ID` |
-| Family Wallet | Family member management | `NEXT_PUBLIC_FAMILY_WALLET_CONTRACT_ID` |
+| Contract         | Purpose                       | Environment Variable                       |
+| ---------------- | ----------------------------- | ------------------------------------------ |
+| Remittance Split | Automatic money allocation    | `NEXT_PUBLIC_REMITTANCE_SPLIT_CONTRACT_ID` |
+| Savings Goals    | Goal-based savings management | `NEXT_PUBLIC_SAVINGS_GOALS_CONTRACT_ID`    |
+| Bill Payments    | Bill tracking and payments    | `NEXT_PUBLIC_BILL_PAYMENTS_CONTRACT_ID`    |
+| Insurance        | Micro-insurance policies      | `NEXT_PUBLIC_INSURANCE_CONTRACT_ID`        |
+| Family Wallet    | Family member management      | `NEXT_PUBLIC_FAMILY_WALLET_CONTRACT_ID`    |
 
 **Deployment Notes:**
+
 - Contracts must be deployed to Stellar testnet/mainnet before use
 - Update contract IDs in `.env.local` after deployment
 - Verify contract addresses match network (testnet vs mainnet)
@@ -300,6 +430,7 @@ Returns system status and connectivity:
 ```
 
 **Monitoring Recommendations:**
+
 - Set up uptime monitoring for `/api/health`
 - Monitor API response times and error rates
 - Track Stellar network connectivity
@@ -340,6 +471,7 @@ npm run test:integration -- auth
 Integration tests are in the `__tests__/integration/` directory.
 
 **Testing Checklist:**
+
 - ✓ Authentication flow (nonce → sign → verify)
 - ✓ Contract interactions (all 5 contracts)
 - ✓ Error handling and validation
@@ -435,9 +567,9 @@ MIT
 **Deprecation Policy**
 
 - When a new major version (e.g. v2) is released, older major versions will be supported for a minimum of **6 months** before scheduled removal. During that window:
-   - Maintain security fixes and critical bug fixes for the deprecated major version.
-   - Announce deprecation clearly in changelogs and developer docs with migration guides.
-   - Provide automated redirects or compatibility layers where feasible.
+  - Maintain security fixes and critical bug fixes for the deprecated major version.
+  - Announce deprecation clearly in changelogs and developer docs with migration guides.
+  - Provide automated redirects or compatibility layers where feasible.
 
 **OpenAPI / API Documentation**
 
@@ -458,48 +590,51 @@ MIT
 - To meet the repository's backward-compatibility requirement, we keep `/api/*` behavior unchanged by rewriting it to `/api/v1/*`. This preserves compatibility for existing consumers.
 
 If you want, I can also:
+
 - Move or duplicate any existing API route files into an explicit `app/api/v1/` folder.
 - Expand `openapi.yaml` with concrete endpoint definitions from your backend contract or tests.
 
 API Endpoints (v1)
 
 - `POST /api/bills` — Create bill transaction XDR
-   - Request headers: `x-user` (caller public key)
-   - Body: `{ name, amount, dueDate, recurring, frequencyDays }`
-   - Validations: `amount > 0`, `dueDate` valid ISO date, when `recurring === true` then `frequencyDays > 0`.
-   - Response: `{ xdr: string }` — unsigned transaction XDR ready for the frontend to sign and submit.
+  - Request headers: `x-user` (caller public key)
+  - Body: `{ name, amount, dueDate, recurring, frequencyDays }`
+  - Validations: `amount > 0`, `dueDate` valid ISO date, when `recurring === true` then `frequencyDays > 0`.
+  - Response: `{ xdr: string }` — unsigned transaction XDR ready for the frontend to sign and submit.
 
 - `POST /api/bills/[id]/pay` — Build pay-bill transaction XDR
-   - Request headers: `x-user` (caller public key)
-   - Response: `{ xdr: string }`
+  - Request headers: `x-user` (caller public key)
+  - Response: `{ xdr: string }`
 
 - `POST /api/bills/[id]/cancel` — Build cancel-bill transaction XDR
-   - Request headers: `x-user` (caller public key)
-   - Optional owner-only enforcement: set header `x-owner-only: 1` and `x-owner` to require the caller match the owner.
-   - Response: `{ xdr: string }`
+  - Request headers: `x-user` (caller public key)
+  - Optional owner-only enforcement: set header `x-owner-only: 1` and `x-owner` to require the caller match the owner.
+  - Response: `{ xdr: string }`
 
 Notes:
+
 - These endpoints return a transaction XDR composed of `manageData` operations that encode the requested action. The frontend should sign the returned XDR and submit it to Horizon (or via a backend submission endpoint) to complete the operation.
 - Server builds transactions using the Horizon URL in `HORIZON_URL` and network passphrase in `NETWORK_PASSPHRASE` (defaults to testnet). Set these environment variables in production to use a different network.
 
 Insurance endpoints (v1)
 
 - `POST /api/insurance` — Create policy transaction XDR
-   - Request headers: `x-user` (caller public key)
-   - Body: `{ name, coverageType, monthlyPremium, coverageAmount }`
-   - Validations: `monthlyPremium > 0`, `coverageAmount > 0`, required `name` and `coverageType`.
-   - Response: `{ xdr: string }` — unsigned transaction XDR ready for the frontend to sign and submit.
+  - Request headers: `x-user` (caller public key)
+  - Body: `{ name, coverageType, monthlyPremium, coverageAmount }`
+  - Validations: `monthlyPremium > 0`, `coverageAmount > 0`, required `name` and `coverageType`.
+  - Response: `{ xdr: string }` — unsigned transaction XDR ready for the frontend to sign and submit.
 
 - `POST /api/insurance/[id]/pay` — Build pay-premium transaction XDR
-   - Request headers: `x-user` (caller public key)
-   - Response: `{ xdr: string }`
+  - Request headers: `x-user` (caller public key)
+  - Response: `{ xdr: string }`
 
 - `POST /api/insurance/[id]/deactivate` — Build deactivate-policy transaction XDR
-   - Request headers: `x-user` (caller public key)
-   - Optional owner-only enforcement: set header `x-owner-only: 1` and `x-owner` to require the caller match the owner.
-   - Response: `{ xdr: string }`
+  - Request headers: `x-user` (caller public key)
+  - Optional owner-only enforcement: set header `x-owner-only: 1` and `x-owner` to require the caller match the owner.
+  - Response: `{ xdr: string }`
 
 Notes:
+
 - These endpoints return transaction XDRs composed with `manageData` operations to encode policy actions. If you prefer Soroban contract invocations, I can convert the builders to use contract calls.
 
 ## API Discovery

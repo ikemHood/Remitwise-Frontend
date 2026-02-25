@@ -52,6 +52,20 @@ npm run build
 npm start
 ```
 
+### End-to-End Testing
+
+To run the Playwright end-to-end tests for authentication and protected routes:
+
+```bash
+# Set required test environment variables
+export TEST_WALLET_ADDRESS="GDEMOXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+export TEST_SIGNATURE="mock-signature"
+
+# Run tests
+npm run test:e2e
+```
+
+
 ## Project Structure
 
 ```

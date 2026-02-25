@@ -23,6 +23,29 @@ paths:
       description: >
         Protected route. Starts a fiat -> USDC flow against the configured anchor.
         Returns a URL and/or flow steps. Returns 501 when anchor is not configured.
+  - url: /api
+    description: legacy base path (rewrites to v1)
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: remitwise-session
+      description: Iron Session cookie for authenticated users
+    xUserHeader:
+      type: apiKey
+      in: header
+      name: x-user
+      description: Stellar public key of the caller
+
+paths:
+  /auth/login:
+    post:
+      summary: Login via Wallet Signature
+      description: Authenticate user by verifying an Ed25519 signature of a previously issued nonce.
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -52,6 +75,101 @@ paths:
       description: >
         Protected route. Starts a USDC -> fiat flow against the configured anchor.
         Returns a URL and/or flow steps. Returns 501 when anchor is not configured.
+              required:
+                - address
+                - signature
+              properties:
+                address:
+                  type: string
+                  description: Stellar public key
+                signature:
+                  type: string
+                  description: Base64 encoded signature
+      responses:
+        '200':
+          description: Successfully authenticated, returns a session cookie.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  address:
+                    type: string
+        '400':
+          description: Missing address or signature
+        '401':
+          description: Invalid signature or expired nonce
+        '500':
+          description: Server error
+          
+  /split:
+    get:
+      summary: Get Split Configuration
+      description: Fetch the current user's allocation percentages.
+      security:
+        - cookieAuth: []
+      tags:
+        - Split
+      responses:
+        '200':
+          description: Returns configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  percentages:
+                    type: object
+                    properties:
+                      savings:
+                        type: number
+                      bills:
+                        type: number
+                      insurance:
+                        type: number
+                      family:
+                        type: number
+        '404':
+          description: Split config not found
+    post:
+      summary: Update Split Configuration
+      security:
+        - cookieAuth: []
+      tags:
+        - Split
+      responses:
+        '200':
+          description: Configuration updated
+          
+  /split/calculate:
+    get:
+      summary: Calculate Split Allocation
+      description: Given an amount, calculate the allocation based on the user's split settings.
+      security:
+        - cookieAuth: []
+      tags:
+        - Split
+      parameters:
+        - in: query
+          name: amount
+          schema:
+            type: number
+          required: true
+          description: The gross amount to split
+      responses:
+        '200':
+          description: Calculated amounts
+          
+  /remittance/allocate:
+    post:
+      summary: Allocate Remittance
+      description: Record a remittance and allocate the funds accordingly.
+      security:
+        - cookieAuth: []
+      tags:
+        - Remittance
       requestBody:
         required: true
         content:
@@ -113,3 +231,237 @@ paths:
         "401":
           description: Unauthorized
 components: {}
+              required:
+                - txHash
+                - amount
+              properties:
+                txHash:
+                  type: string
+                amount:
+                  type: number
+      responses:
+        '200':
+          description: Allocation success
+        
+  /bills:
+    get:
+      summary: Get Legacy Bills
+      security:
+        - cookieAuth: []
+      tags:
+        - Bills
+      responses:
+        '200':
+          description: List of bills
+    post:
+      summary: Create or Pay Legacy Bill
+      security:
+        - cookieAuth: []
+      tags:
+        - Bills
+      responses:
+        '200':
+          description: Success
+          
+  /v1/bills:
+    post:
+      summary: Create a new Bill
+      security:
+        - xUserHeader: []
+      tags:
+        - Bills (v1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - amount
+                - dueDate
+              properties:
+                name:
+                  type: string
+                amount:
+                  type: number
+                dueDate:
+                  type: string
+                  format: date-time
+                recurring:
+                  type: boolean
+                frequencyDays:
+                  type: number
+      responses:
+        '200':
+          description: Returns XDR for the transaction
+        '400':
+          description: Invalid input parameters
+          
+  /v1/bills/{id}/cancel:
+    post:
+      summary: Cancel a Bill
+      security:
+        - xUserHeader: []
+      tags:
+        - Bills (v1)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns XDR to cancel the bill
+          
+  /v1/bills/{id}/pay:
+    post:
+      summary: Pay a Bill
+      security:
+        - xUserHeader: []
+      tags:
+        - Bills (v1)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns XDR to pay the bill
+          
+  /insurance:
+    get:
+      summary: Get Active Policies
+      security:
+        - xUserHeader: []
+        - cookieAuth: []
+      tags:
+        - Insurance
+      parameters:
+        - in: query
+          name: owner
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of active policies
+          
+  /v1/insurance:
+    post:
+      summary: Create Insurance Policy
+      security:
+        - xUserHeader: []
+      tags:
+        - Insurance (v1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - coverageType
+                - monthlyPremium
+                - coverageAmount
+              properties:
+                name:
+                  type: string
+                coverageType:
+                  type: string
+                monthlyPremium:
+                  type: number
+                coverageAmount:
+                  type: number
+      responses:
+        '200':
+          description: Returns XDR
+          
+  /v1/insurance/{id}/deactivate:
+    post:
+      summary: Deactivate Insurance Policy
+      security:
+        - xUserHeader: []
+      tags:
+        - Insurance (v1)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns XDR
+          
+  /v1/insurance/{id}/pay:
+    post:
+      summary: Pay Insurance Premium
+      security:
+        - xUserHeader: []
+      tags:
+        - Insurance (v1)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns XDR
+          
+  /goals:
+    get:
+      summary: Get Savings Goals
+      security:
+        - cookieAuth: []
+      tags:
+        - Goals
+      responses:
+        '200':
+          description: Array of goals
+    post:
+      summary: Create Savings Goal
+      security:
+        - cookieAuth: []
+      tags:
+        - Goals
+      responses:
+        '200':
+          description: Success
+          
+  /family:
+    get:
+      summary: Get Family Members
+      security:
+        - cookieAuth: []
+      tags:
+        - Family
+      responses:
+        '200':
+          description: Array of family members
+    post:
+      summary: Add Family Member
+      security:
+        - cookieAuth: []
+      tags:
+        - Family
+      responses:
+        '200':
+          description: Success
+          
+  /send:
+    post:
+      summary: Send Transaction
+      security:
+        - cookieAuth: []
+      tags:
+        - Send
+      responses:
+        '200':
+          description: Returns transaction Id

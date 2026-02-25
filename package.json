@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "echo 'Linting skipped due to Next16/ESLint9 incompatibility' && exit 0",
-    "test": "npm run test:unit",
-    "test:unit": "node --test tests/unit/webhooks-verify.test.cjs && node --test tests/unit/contract-cache.test.cjs",
-    "test:integration": "node -e \"process.exit(0)\"",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "node --test tests/unit/webhooks-verify.test.cjs",
+    "test:integration": "node --import tsx/esm --test tests/integration/*.test.cjs",
+    "test:integration:watch": "node --import tsx/esm --test --watch tests/integration/*.test.cjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -24,6 +25,10 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^3.7.0",
+    "swagger-ui-react": "^5.31.2",
+    "tailwind-merge": "^3.4.0",
+    "yaml": "^2.8.2"
+    "stellar-wallet-kit": "^2.0.7",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
@@ -39,8 +44,7 @@
     "postcss": "^8.4.0",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.3.0",
-    "ts-jest": "^29.4.6",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.0.0"
   }
 }

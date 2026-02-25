@@ -14,7 +14,8 @@ test.describe("Authentication and Protected Flow", () => {
 
     // 2. Fetch nonce from the new endpoint
     const nonceResponse = await page.request.post("/api/auth/nonce", {
-      data: { publicKey: address },
+      data: JSON.stringify({ publicKey: address }),
+      headers: { "Content-Type": "application/json" },
     });
     expect(nonceResponse.status()).toBe(200);
     const { nonce } = await nonceResponse.json();
@@ -26,18 +27,15 @@ test.describe("Authentication and Protected Flow", () => {
 
     // 4. Perform actual login using the signature
     const loginResponse = await page.request.post("/api/auth/login", {
-      data: {
-        address,
-        message: nonce,
-        signature,
-      },
+      data: JSON.stringify({ address, message: nonce, signature }),
+      headers: { "Content-Type": "application/json" },
     });
 
     // Assert successful login
     expect(loginResponse.status()).toBe(200);
     const loginData = await loginResponse.json();
-    expect(loginData).toHaveProperty("success", true);
-    expect(loginData).toHaveProperty("token");
+    expect(loginData).toHaveProperty("ok", true);
+    expect(loginData).toHaveProperty("address");
   });
 
   test("should reject login with an invalid signature", async ({ page }) => {
@@ -45,7 +43,8 @@ test.describe("Authentication and Protected Flow", () => {
     const address = keypair.publicKey();
 
     const nonceResponse = await page.request.post("/api/auth/nonce", {
-      data: { publicKey: address },
+      data: JSON.stringify({ publicKey: address }),
+      headers: { "Content-Type": "application/json" },
     });
     const { nonce } = await nonceResponse.json();
 
@@ -55,7 +54,12 @@ test.describe("Authentication and Protected Flow", () => {
     const invalidSignature = signatureBuffer.toString("base64");
 
     const loginResponse = await page.request.post("/api/auth/login", {
-      data: { address, message: nonce, signature: invalidSignature },
+      data: JSON.stringify({
+        address,
+        message: nonce,
+        signature: invalidSignature,
+      }),
+      headers: { "Content-Type": "application/json" },
     });
 
     // Assert failure
@@ -74,7 +78,8 @@ test.describe("Authentication and Protected Flow", () => {
     const signature = signatureBuffer.toString("base64");
 
     const loginResponse = await page.request.post("/api/auth/login", {
-      data: { address, message: "deadbeef", signature },
+      data: JSON.stringify({ address, message: "deadbeef", signature }),
+      headers: { "Content-Type": "application/json" },
     });
 
     // Assert failure due to missing nonce

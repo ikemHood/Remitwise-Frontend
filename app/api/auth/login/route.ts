@@ -1,78 +1,90 @@
-import { NextResponse } from 'next/server';
-import { Keypair } from '@stellar/stellar-sdk';
-import { getAndClearNonce } from '@/lib/auth-cache';
-import {
-  createSession,
-  getSessionCookieHeader,
-} from '../../../../lib/session';
+import { NextRequest, NextResponse } from 'next/server';
+import { Keypair, StrKey } from '@stellar/stellar-sdk';
+import { getNonce, deleteNonce } from '@/lib/auth/nonce-store';
 
+// Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
- * Wallet-based auth flow:
- * 1. Frontend: user connects wallet (e.g. Freighter), gets address.
- * 2. Frontend: build a nonce message (e.g. "Sign in to Remitwise at {timestamp}").
- * 3. Frontend: sign message with wallet
- * 4. Frontend: POST /api/auth/login with { address, signature }
- * 5. Backend: verify with Keypair using stored server memory nonce; create encrypted session cookie.
+ * POST /api/auth/login
+ * Verify a signature and authenticate user
+ * 
+ * Request Body:
+ * - address: Stellar public key
+ * - message: The nonce that was signed
+ * - signature: Base64-encoded signature
  */
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { address, signature } = body;
+    const { address, message, signature } = body;
 
-    if (!address || !signature) {
+    if (!address || !message || !signature) {
       return NextResponse.json(
-        { error: 'Address and signature are required' },
+        { error: 'Missing required fields: address, message, signature' },
         { status: 400 }
       );
     }
 
-    // Retrieve and clear nonce — returns null if missing or expired
-    const nonce = getAndClearNonce(address);
-    if (!nonce) {
+    // Validate Stellar address format
+    if (!StrKey.isValidEd25519PublicKey(address)) {
       return NextResponse.json(
-        { error: 'Nonce expired or missing. Please request a new nonce.' },
+        { error: 'Invalid Stellar address format' },
+        { status: 400 }
+      );
+    }
+
+    // Verify nonce exists and hasn't expired
+    const storedNonce = getNonce(address);
+    if (!storedNonce || storedNonce !== message) {
+      return NextResponse.json(
+        { error: 'Invalid or expired nonce' },
         { status: 401 }
       );
     }
 
-    // Verify signature
     try {
+      // Verify the signature
       const keypair = Keypair.fromPublicKey(address);
-      // Nonce is stored as hex string; signature is base64 from the client.
-      const isValid = keypair.verify(
-        Buffer.from(nonce, 'hex'),
-        Buffer.from(signature, 'base64')
-      );
+      const messageBuffer = Buffer.from(message, 'utf8');
+      const signatureBuffer = Buffer.from(signature, 'base64');
+
+      const isValid = keypair.verify(messageBuffer, signatureBuffer);
 
       if (!isValid) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        );
       }
-    } catch {
+
+      // Delete used nonce (one-time use)
+      deleteNonce(address);
+
+      // TODO: Create session/JWT token
+      // const token = await createAuthToken(address);
+
+      // Return success with mock token
+      return NextResponse.json({
+        success: true,
+        token: `mock-jwt-${address.substring(0, 10)}`,
+        address,
+      });
+
+    } catch (verifyError) {
+      console.error('Signature verification error:', verifyError);
       return NextResponse.json(
-        { error: 'Signature verification failed' },
+        { error: 'Invalid signature' },
         { status: 401 }
       );
     }
 
-    const sealed = await createSession(address);
-    const cookieHeader = getSessionCookieHeader(sealed);
-
-    return new Response(
-      JSON.stringify({ ok: true, address }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Set-Cookie': cookieHeader,
-        },
-      }
+  } catch (error) {
+    console.error('Error during login:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
     );
-
-  } catch (err) {
-    console.error('Login error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

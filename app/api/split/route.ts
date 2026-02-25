@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, ApiError } from '@/lib/auth';
-import { getSplit } from '@/lib/contracts/remittance-split';
+import { getSplit } from '@/lib/contracts/remittance-split-cached';
 
 async function getHandler(request: NextRequest, session: string) {
   try {

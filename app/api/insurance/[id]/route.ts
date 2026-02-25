@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPolicy } from "@/lib/contracts/insurance";
+import { getPolicy } from "@/lib/contracts/insurance-cached";
 import { validateAuth, unauthorizedResponse } from "@/lib/auth";
 
 // GET /api/insurance/:id

@@ -2,10 +2,16 @@
 
 import { useState } from 'react';
 import { Wallet, ChevronDown, LogOut, User, Settings } from 'lucide-react';
+import { logout } from '@/lib/client/logout';
 
 const WalletButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const address = "GDEMOX....XXXX";
+
+  const handleLogout = async () => {
+    setIsOpen(false);
+    await logout();
+  };
 
   return (
     <div className="relative">
@@ -35,7 +41,10 @@ const WalletButton = () => {
                 Settings
               </button>
               <div className="h-px bg-white/10 my-1" />
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all text-sm font-medium">
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all text-sm font-medium"
+              >
                 <LogOut className="w-4 h-4" />
                 Disconnect
               </button>

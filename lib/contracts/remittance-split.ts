@@ -1,13 +1,13 @@
 import { Contract, SorobanRpc, Networks } from '@stellar/stellar-sdk';
 
-interface SplitConfig {
+export interface SplitConfig {
   savings_percent: number;
   bills_percent: number;
   insurance_percent: number;
   family_percent: number;
 }
 
-interface SplitAmounts {
+export interface SplitAmounts {
   savings: string;
   bills: string;
   insurance: string;

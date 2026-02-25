@@ -5,6 +5,7 @@ import {
     scValToNative,
     xdr,
   } from "@stellar/stellar-sdk";
+import { parseContractError, createNotFoundError, createValidationError, ContractErrorCode } from "@/lib/errors/contract-errors";
   
   // ── Config ──────────────────────────────────────────────────────────────────
   const SOROBAN_RPC_URL =
@@ -64,20 +65,33 @@ import {
       .setTimeout(30)
       .build();
   
-    const result = (await server.simulateTransaction(tx)) as {
-      result?: { retval: xdr.ScVal };
-      error?: string;
-    };
+    try {
+      const result = (await server.simulateTransaction(tx)) as {
+        result?: { retval: xdr.ScVal };
+        error?: string;
+      };
   
-    if (result.error) {
-      throw new Error(`Soroban simulation error: ${result.error}`);
+      if (result.error) {
+        throw parseContractError(new Error(`Soroban simulation error: ${result.error}`), {
+          contractId: 'insurance',
+          method
+        });
+      }
+  
+      if (!result.result?.retval) {
+        throw parseContractError(new Error(`No return value from contract method: ${method}`), {
+          contractId: 'insurance',
+          method
+        });
+      }
+  
+      return result.result.retval;
+    } catch (error) {
+      throw parseContractError(error, {
+        contractId: 'insurance',
+        method
+      });
     }
-  
-    if (!result.result?.retval) {
-      throw new Error(`No return value from contract method: ${method}`);
-    }
-  
-    return result.result.retval;
   }
   
   // ── Mapper ───────────────────────────────────────────────────────────────────

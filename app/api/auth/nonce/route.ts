@@ -1,8 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { setNonce } from "@/lib/auth-cache";
+import { randomBytes } from "crypto";
 
 export async function POST(request: NextRequest) {
   const { publicKey } = await request.json();
-  // TODO: Generate and store nonce for signature verification
-  const nonce = Math.random().toString(36).substring(7);
+
+  if (!publicKey) {
+    return NextResponse.json(
+      { error: "publicKey is required" },
+      { status: 400 },
+    );
+  }
+
+  // Generate a random nonce (32 bytes) and convert to hex
+  const nonceBuffer = randomBytes(32);
+  const nonce = nonceBuffer.toString("hex");
+
+  // Store nonce in cache for later verification
+  setNonce(publicKey, nonce);
+
   return NextResponse.json({ nonce });
 }

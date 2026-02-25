@@ -1,53 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
-import { storeNonce } from '@/lib/auth/nonce-store';
+import { NextRequest, NextResponse } from "next/server";
+import { setNonce } from "@/lib/auth-cache";
+import { randomBytes } from "crypto";
 
-// Force dynamic rendering for this route
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export async function POST(request: NextRequest) {
+  const { publicKey } = await request.json();
 
-/**
- * GET /api/auth/nonce
- * Generate a nonce for signature-based authentication
- * 
- * Query Parameters:
- * - address: Stellar address requesting the nonce
- */
-export async function GET(request: NextRequest) {
-    try {
-        const address = request.nextUrl.searchParams.get('address');
+  if (!publicKey) {
+    return NextResponse.json(
+      { error: "publicKey is required" },
+      { status: 400 },
+    );
+  }
 
-        if (!address) {
-            return NextResponse.json(
-                { error: 'Missing required query parameter: address' },
-                { status: 400 }
-            );
-        }
+  // Generate a random nonce (32 bytes) and convert to hex
+  const nonceBuffer = randomBytes(32);
+  const nonce = nonceBuffer.toString("hex");
 
-        // Validate Stellar address format (G + 55 alphanumeric characters)
-        if (!/^G[A-Z0-9]{55}$/.test(address)) {
-            return NextResponse.json(
-                { error: 'Invalid Stellar address format' },
-                { status: 400 }
-            );
-        }
+  // Store nonce in cache for later verification
+  setNonce(publicKey, nonce);
 
-        // Generate a random nonce
-        const nonce = randomBytes(32).toString('hex');
-
-        // Store nonce with 5 minute expiration
-        storeNonce(address, nonce);
-
-        return NextResponse.json({
-            nonce,
-            address,
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-        });
-    } catch (error) {
-        console.error('Error generating nonce:', error);
-        return NextResponse.json(
-            { error: 'Internal Server Error' },
-            { status: 500 }
-        );
-    }
+  return NextResponse.json({ nonce });
 }

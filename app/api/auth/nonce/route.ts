@@ -1,60 +1,77 @@
 import { randomBytes } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { setNonce } from '@/lib/auth-cache';
+import { storeNonce } from '@/lib/auth/nonce-store';
 
-function resolveAddressFromRequest(request: NextRequest, body?: unknown): string | null {
+// Force dynamic rendering to ensure fresh nonces
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+/**
+ * Validates a Stellar address (G + 55 alphanumeric characters)
+ */
+function isValidStellarAddress(address: string): boolean {
+  return /^G[A-Z0-9]{55}$/.test(address);
+}
+
+/**
+ * Extracts address from query params or request body
+ */
+function resolveAddressFromRequest(request: NextRequest, body?: any): string | null {
   const queryAddress = request.nextUrl.searchParams.get('address')?.trim();
   if (queryAddress) return queryAddress;
 
-  if (!body || typeof body !== 'object') return null;
-  const input = body as Record<string, unknown>;
-  const address =
-    (typeof input.publicKey === 'string' && input.publicKey.trim()) ||
-    (typeof input.address === 'string' && input.address.trim()) ||
-    null;
-  return address;
+  if (body && typeof body === 'object') {
+    const address = (body.publicKey || body.address);
+    if (typeof address === 'string') return address.trim();
+  }
+
+  return null;
 }
 
-function isValidStellarAddress(address: string): boolean {
-  return address.length === 56 && address.startsWith('G');
-}
+async function handleNonceRequest(request: NextRequest) {
+  try {
+    let body: any = null;
+    if (request.method === 'POST') {
+      try {
+        body = await request.json();
+      } catch {
+        // Fallback to query params if JSON parsing fails
+      }
+    }
 
-function createNonce(): string {
-  // 32 random bytes encoded as hex; login verifies signature over raw bytes.
-  return randomBytes(32).toString('hex');
+    const address = resolveAddressFromRequest(request, body);
+
+    if (!address || !isValidStellarAddress(address)) {
+      return NextResponse.json(
+        { error: 'Valid Stellar address is required (e.g., ?address=G...)' },
+        { status: 400 }
+      );
+    }
+
+    // Generate a 32-byte random nonce
+    const nonce = randomBytes(32).toString('hex');
+
+    // Store nonce (typically handles expiration internally)
+    await storeNonce(address, nonce);
+
+    return NextResponse.json({
+      nonce,
+      address,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    });
+  } catch (error) {
+    console.error('Error generating nonce:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(request: NextRequest) {
-  const address = resolveAddressFromRequest(request);
-  if (!address || !isValidStellarAddress(address)) {
-    return NextResponse.json(
-      { error: 'Valid Stellar address is required as ?address=' },
-      { status: 400 }
-    );
-  }
-
-  const nonce = createNonce();
-  setNonce(address, nonce);
-  return NextResponse.json({ nonce });
+  return handleNonceRequest(request);
 }
 
 export async function POST(request: NextRequest) {
-  let body: unknown = null;
-  try {
-    body = await request.json();
-  } catch {
-    // Keep null to allow query-param fallback.
-  }
-
-  const address = resolveAddressFromRequest(request, body);
-  if (!address || !isValidStellarAddress(address)) {
-    return NextResponse.json(
-      { error: 'Valid Stellar address is required in body or query' },
-      { status: 400 }
-    );
-  }
-
-  const nonce = createNonce();
-  setNonce(address, nonce);
-  return NextResponse.json({ nonce });
+  return handleNonceRequest(request);
 }

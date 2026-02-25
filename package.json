@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "echo 'Linting skipped due to Next16/ESLint9 incompatibility' && exit 0",
     "test": "npm run test:unit",
-    "test:unit": "node --test tests/unit/webhooks-verify.test.cjs",
+    "test:unit": "node --test tests/unit/webhooks-verify.test.cjs && node --test tests/unit/contract-cache.test.cjs",
     "test:integration": "node -e \"process.exit(0)\"",
     "test:e2e": "playwright test"
   },
@@ -35,9 +35,12 @@
     "autoprefixer": "^10.4.0",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
+    "jest": "^30.2.0",
     "postcss": "^8.4.0",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.3.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   }
 }

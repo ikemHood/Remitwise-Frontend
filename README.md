@@ -427,6 +427,34 @@ GET  /api/admin/audit         # Admin-only audit events
 - Responsive design with mobile-first approach
 - Components are structured for easy integration
 
+## API Endpoints
+
+### Pagination
+
+All list endpoints support standardized cursor-based pagination with the following parameters:
+
+- `limit` (optional): Maximum number of items to return (default: 20, max: 100)
+- `cursor` (optional): Cursor for pagination (used to fetch the next page)
+
+Response shape for all paginated endpoints:
+
+```json
+{
+  "data": [...],
+  "nextCursor"?: "string",
+  "hasMore": boolean
+}
+```
+
+### Available Endpoints
+
+- `GET /api/goals`: Get paginated list of savings goals
+- `POST /api/goals`: Create a new savings goal
+- `GET /api/bills`: Get paginated list of bills
+- `POST /api/bills`: Create a new bill
+- `GET /api/remittance/history`: Get paginated list of transaction history
+- `POST /api/remittance/history`: Create a new transaction
+
 ## Future Enhancements
 
 - Real-time transaction updates
@@ -516,3 +544,12 @@ Insurance endpoints (v1)
 
 Notes:
 - These endpoints return transaction XDRs composed with `manageData` operations to encode policy actions. If you prefer Soroban contract invocations, I can convert the builders to use contract calls.
+
+## API Discovery
+
+RemitWise exposes an OpenAPI discovery endpoint:
+
+/api/.well-known/openapi
+
+This allows integrators and wallets to automatically discover
+the RemitWise API specification.

@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npm run test:unit",
-    "test:unit": "node -e \"process.exit(0)\"",
-    "test:integration": "node -e \"process.exit(0)\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:unit": "vitest run tests/unit",
+    "test:property": "vitest run tests/property",
+    "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -27,15 +30,18 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.33",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@vitest/ui": "^4.0.18",
     "autoprefixer": "^10.4.0",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
+    "fast-check": "^4.5.3",
     "postcss": "^8.4.0",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.3.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.18"
   }
 }

@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { validatedRoute } from "@/lib/auth/middleware";
+import { compose, validatedRoute, withAuth } from "@/lib/auth/middleware";
 
 const billSchema = z.object({
   name: z.string().min(4, "Name is too short"),
@@ -28,4 +28,14 @@ const addBillHandler = validatedRoute(billSchema, async (req, data) => {
 // export const POST = compose(withAuth)(addBillHandler);
 
 // if you don't need auth on a route, just export directly:
-export const POST = addBillHandler;
+// export const POST = addBillHandler;
+// import { withAuth } from '@/lib/auth';
+
+async function getHandler(request: NextRequest) {
+  // TODO: Fetch bills from Soroban bill_payments contract
+  return NextResponse.json({ bills: [] });
+}
+
+
+export const GET = compose(withAuth)(getHandler);
+export const POST = compose(withAuth)(addBillHandler);

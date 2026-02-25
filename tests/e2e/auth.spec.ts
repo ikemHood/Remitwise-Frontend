@@ -11,13 +11,15 @@ test.describe('Authentication and Protected Flow', () => {
         const address = keypair.publicKey();
 
         // 2. Fetch nonce from the new endpoint
-        const nonceResponse = await page.request.get(`/api/auth/nonce?address=${address}`);
+        const nonceResponse = await page.request.post('/api/auth/nonce', {
+            data: { publicKey: address }
+        });
         expect(nonceResponse.status()).toBe(200);
         const { nonce } = await nonceResponse.json();
         expect(nonce).toBeDefined();
 
-        // 3. Sign the nonce natively via Stellar Keypair (Backend uses utf8 encoding)
-        const signatureBuffer = keypair.sign(Buffer.from(nonce, 'utf8'));
+        // 3. Sign raw nonce bytes (nonce is a hex string)
+        const signatureBuffer = keypair.sign(Buffer.from(nonce, 'hex'));
         const signature = signatureBuffer.toString('base64');
 
         // 4. Perform actual login using the signature
@@ -32,20 +34,22 @@ test.describe('Authentication and Protected Flow', () => {
         // Assert successful login
         expect(loginResponse.status()).toBe(200);
         const loginData = await loginResponse.json();
-        expect(loginData).toHaveProperty('success', true);
-        expect(loginData).toHaveProperty('token');
+        expect(loginData).toHaveProperty('ok', true);
+        expect(loginData).toHaveProperty('address', address);
     });
 
     test('should reject login with an invalid signature', async ({ page }) => {
         const keypair = Keypair.random();
         const address = keypair.publicKey();
 
-        const nonceResponse = await page.request.get(`/api/auth/nonce?address=${address}`);
+        const nonceResponse = await page.request.post('/api/auth/nonce', {
+            data: { publicKey: address }
+        });
         const { nonce } = await nonceResponse.json();
 
         // Use a different keypair to sign
         const wrongKeypair = Keypair.random();
-        const signatureBuffer = wrongKeypair.sign(Buffer.from(nonce, 'utf8'));
+        const signatureBuffer = wrongKeypair.sign(Buffer.from(nonce, 'hex'));
         const invalidSignature = signatureBuffer.toString('base64');
 
         const loginResponse = await page.request.post('/api/auth/login', {
@@ -73,4 +77,3 @@ test.describe('Authentication and Protected Flow', () => {
         expect(loginResponse.status()).toBe(401);
     });
 });
-

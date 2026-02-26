@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     try {
       // Verify the signature
       const keypair = Keypair.fromPublicKey(address);
-      const messageBuffer = Buffer.from(message, 'utf8');
+      const messageBuffer = Buffer.from(message, 'hex');
       const signatureBuffer = Buffer.from(signature, 'base64');
 
       const isValid = keypair.verify(messageBuffer, signatureBuffer);
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       // Return success with mock token
       return NextResponse.json({
         success: true,
+        ok: true,
         token: `mock-jwt-${address.substring(0, 10)}`,
         address,
       });

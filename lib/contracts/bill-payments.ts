@@ -38,7 +38,7 @@ export interface Bill {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function validatePublicKey(pk: string) {
+function validatePublicKey(pk: string): boolean {
   try {
     return StrKey.isValidEd25519PublicKey(pk)
   } catch {
@@ -49,7 +49,7 @@ function validatePublicKey(pk: string) {
 async function loadAccount(accountId: string) {
   if (!validatePublicKey(accountId)) {
     throw createValidationError(
-      ContractErrorCode.INVALID_ADDRESS,
+      ContractErrorCode.INVALID_ACCOUNT,
       'Invalid Stellar account address',
       { contractId: 'bill-payments', metadata: { accountId } }
     )
@@ -205,6 +205,7 @@ export async function buildCreateBillTx(
     )
   }
 
+  // Basic date validation
   if (Number.isNaN(Date.parse(dueDate))) {
     throw createValidationError(
       ContractErrorCode.INVALID_DUE_DATE,
@@ -222,6 +223,7 @@ export async function buildCreateBillTx(
       networkPassphrase: NETWORK_PASSPHRASE,
     })
 
+    // Use several ManageData ops to keep values under the 64-byte limit per entry
     txBuilder.addOperation(
       Operation.manageData({ name: 'bill:name', value: name.slice(0, 64) })
     )
@@ -343,12 +345,17 @@ export async function buildCancelBillTx(caller: string, billId: string) {
   }
 }
 
+// ── Export all functions ──────────────────────────────────────────────────────
+
 export default {
+  // Read functions
   getBill,
   getUnpaidBills,
   getAllBills,
   getTotalUnpaid,
   getOverdueBills,
+  
+  // Transaction builders
   buildCreateBillTx,
   buildPayBillTx,
   buildCancelBillTx,

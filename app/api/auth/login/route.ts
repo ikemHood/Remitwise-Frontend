@@ -8,6 +8,11 @@ import {
 
 import { Keypair, StrKey } from '@stellar/stellar-sdk';
 import { getNonce, deleteNonce } from '@/lib/auth/nonce-store';
+import { getTranslator } from '@/lib/i18n';
+import {
+  createSession,
+  getSessionCookieHeader,
+} from '../../../../lib/session';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -37,10 +42,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { address, message, signature } = body;
+    const t = getTranslator(request.headers.get('accept-language'));
 
     if (!address || !message || !signature) {
       return NextResponse.json(
-        { error: 'Missing required fields: address, message, signature' },
+        { error: t('errors.address_signature_required') || 'Missing required fields: address, message, signature' },
         { status: 400 }
       );
     }
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Validate Stellar address format
     if (!StrKey.isValidEd25519PublicKey(address)) {
       return NextResponse.json(
-        { error: 'Invalid Stellar address format' },
+        { error: t('errors.invalid_address_format') || 'Invalid Stellar address format' },
         { status: 400 }
       );
     }
@@ -57,7 +63,7 @@ export async function POST(request: NextRequest) {
     const storedNonce = getNonce(address);
     if (!storedNonce || storedNonce !== message) {
       return NextResponse.json(
-        { error: 'Invalid or expired nonce' },
+        { error: t('errors.nonce_expired') || 'Invalid or expired nonce' },
         { status: 401 }
       );
     }
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
 
       if (!isValid) {
         return NextResponse.json(
-          { error: 'Invalid signature' },
+          { error: t('errors.invalid_signature') || 'Invalid signature' },
           { status: 401 }
         );
       }
@@ -80,20 +86,29 @@ export async function POST(request: NextRequest) {
       // Delete used nonce (one-time use)
       deleteNonce(address);
 
-      // TODO: Create session/JWT token
-      // const token = await createAuthToken(address);
+      // Create session cookie like from HEAD
+      const sealed = await createSession(address);
+      const cookieHeader = getSessionCookieHeader(sealed);
 
-      // Return success with mock token
-      return NextResponse.json({
-        success: true,
-        token: `mock-jwt-${address.substring(0, 10)}`,
-        address,
-      });
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          token: `mock-jwt-${address.substring(0, 10)}`, // Keeping this property for compatibility with main branch frontend changes
+          address 
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Set-Cookie': cookieHeader,
+          },
+        }
+      );
 
     } catch (verifyError) {
       console.error('Signature verification error:', verifyError);
       return NextResponse.json(
-        { error: 'Invalid signature' },
+        { error: t('errors.signature_verification_failed') || 'Invalid signature' },
         { status: 401 }
       );
     }
@@ -119,8 +134,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error during login:', error);
+    const t = getTranslator(request.headers.get('accept-language'));
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: t('errors.internal_server_error') || 'Internal Server Error' },
       { status: 500 }
     );
   }

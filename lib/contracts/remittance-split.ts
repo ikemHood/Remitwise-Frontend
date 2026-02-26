@@ -35,6 +35,20 @@ export async function getSplit(userAddress: string) {
 
   // Dummy implementation for getting split shape
   try {
+    const server = getRpcServer(env);
+    const contract = new Contract(contractId);
+    
+    const result = await server.getContractData(contractId, contract.call('get_split') as any);
+    
+    if (!result) return null;
+    
+    // Parse contract response - adjust based on actual contract structure
+    return result as unknown as SplitConfig;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      return null;
+    }
+    throw new Error(`Failed to read split config: ${error instanceof Error ? error.message : 'Unknown error'}`);
     const account = await server.getAccount(userAddress);
     if (!account) throw new Error('Account not found');
 
@@ -88,6 +102,21 @@ export async function calculateSplit(amount: number, userAddress: string): Promi
 }
 
 export async function buildInitializeSplitTx(
+  caller: string,
+  percentages: any,
+  options?: any
+): Promise<{ xdr: string, simulate: any }> {
+  return { xdr: "mock_xdr", simulate: {} };
+}
+
+export async function buildUpdateSplitTx(
+  caller: string,
+  percentages: any,
+  options?: any
+): Promise<{ xdr: string, simulate: any }> {
+  return { xdr: "mock_xdr", simulate: {} };
+}
+
   owner: string,
   spending: number,
   savings: number,

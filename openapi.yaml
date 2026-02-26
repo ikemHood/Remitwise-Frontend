@@ -67,6 +67,32 @@ components:
       name: x-user
       description: Stellar public key of the caller
 
+  parameters:
+    AcceptLanguageHeader:
+      in: header
+      name: Accept-Language
+      required: false
+      schema:
+        type: string
+        example: es
+      description: |
+        Optional header to request localized responses. 
+        Supported languages: 'en' (English), 'es' (Spanish).
+
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: |
+            A translated error message based on the Accept-Language header.
+            If the translation is missing or language is not supported, defaults to English.
+            Example translations:
+             - en: "Unauthorized: missing or invalid x-user header"
+             - es: "No autorizado: falta o es inválido el encabezado x-user"
+          example: "Unauthorized: missing or invalid x-user header"
+
 paths:
   /auth/login:
     post:

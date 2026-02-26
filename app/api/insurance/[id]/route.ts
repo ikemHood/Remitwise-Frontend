@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPolicy } from "@/lib/contracts/insurance";
+import { getTranslator } from "@/lib/i18n";
+import { getPolicy } from "@/lib/contracts/insurance-cached";
 import { validateAuth, unauthorizedResponse } from "@/lib/auth";
 
 // GET /api/insurance/:id
@@ -21,12 +22,14 @@ export async function GET(
       error !== null &&
       (error as { code?: string }).code === "NOT_FOUND"
     ) {
-      return NextResponse.json({ error: "Policy not found" }, { status: 404 });
+      const t = getTranslator(request.headers.get("accept-language"));
+      return NextResponse.json({ error: t("errors.policy_not_found") }, { status: 404 });
     }
 
     console.error("[GET /api/insurance/[id]]", error);
+    const t = getTranslator(request.headers.get("accept-language"));
     return NextResponse.json(
-      { error: "Failed to fetch policy from contract" },
+      { error: t("errors.internal_server_error") },
       { status: 502 }
     );
   }

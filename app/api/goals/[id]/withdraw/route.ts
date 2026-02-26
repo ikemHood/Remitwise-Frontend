@@ -19,7 +19,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: goalId } = await params;
     // Authenticate user
     const session = getSessionFromRequest(request);
     if (!session) {
@@ -34,6 +33,7 @@ export async function POST(
     }
     
     // Validate goal ID from URL params
+    const { id: goalId } = await params;
     const goalIdValidation = validateGoalId(goalId);
     if (!goalIdValidation.isValid) {
       return createValidationError('Invalid goal ID', goalIdValidation.error);

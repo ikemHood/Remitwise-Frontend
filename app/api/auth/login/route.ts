@@ -6,6 +6,28 @@ import {
   getSessionCookieHeader,
 } from '@/lib/session';
 
+import { Keypair, StrKey } from '@stellar/stellar-sdk';
+import { getNonce, deleteNonce } from '@/lib/auth/nonce-store';
+import { getTranslator } from '@/lib/i18n';
+import {
+  createSession,
+  getSessionCookieHeader,
+} from '../../../../lib/session';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+/**
+ * POST /api/auth/login
+ * Verify a signature and authenticate user
+ * 
+ * Request Body:
+ * - address: Stellar public key
+ * - message: The nonce that was signed
+ * - signature: Base64-encoded signature
+ */
+
 export const dynamic = 'force-dynamic';
 
 /**
@@ -19,43 +41,74 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { address, signature } = body;
+    const { address, message, signature } = body;
+    const t = getTranslator(request.headers.get('accept-language'));
 
-    if (!address || !signature) {
+    if (!address || !message || !signature) {
       return NextResponse.json(
-        { error: 'Address and signature are required' },
+        { error: t('errors.address_signature_required') || 'Missing required fields: address, message, signature' },
         { status: 400 }
       );
     }
 
-    // Retrieve and clear nonce — returns null if missing or expired
-    const nonce = getAndClearNonce(address);
-    console.log(`[Login] Address: ${address}, Retrived Nonce: ${nonce}`);
-
-    if (!nonce) {
+    // Validate Stellar address format
+    if (!StrKey.isValidEd25519PublicKey(address)) {
       return NextResponse.json(
-        { error: 'Nonce expired or missing. Please request a new nonce.' },
+        { error: t('errors.invalid_address_format') || 'Invalid Stellar address format' },
+        { status: 400 }
+      );
+    }
+
+    // Verify nonce exists and hasn't expired
+    const storedNonce = getNonce(address);
+    if (!storedNonce || storedNonce !== message) {
+      return NextResponse.json(
+        { error: t('errors.nonce_expired') || 'Invalid or expired nonce' },
         { status: 401 }
       );
     }
 
-    // Verify signature
     try {
+      // Verify the signature
       const keypair = Keypair.fromPublicKey(address);
-      // Nonce is stored as hex string; signature is base64 from the client.
-      const isValid = keypair.verify(
-        Buffer.from(nonce, 'utf8'),
-        Buffer.from(signature, 'base64')
-      );
-      console.log(`[Login] Signature valid: ${isValid}`);
+      const messageBuffer = Buffer.from(message, 'utf8');
+      const signatureBuffer = Buffer.from(signature, 'base64');
+
+      const isValid = keypair.verify(messageBuffer, signatureBuffer);
 
       if (!isValid) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        return NextResponse.json(
+          { error: t('errors.invalid_signature') || 'Invalid signature' },
+          { status: 401 }
+        );
       }
-    } catch (err) {
-      console.error('[Login] Verification error:', err);
+
+      // Delete used nonce (one-time use)
+      deleteNonce(address);
+
+      // Create session cookie like from HEAD
+      const sealed = await createSession(address);
+      const cookieHeader = getSessionCookieHeader(sealed);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          token: `mock-jwt-${address.substring(0, 10)}`, // Keeping this property for compatibility with main branch frontend changes
+          address 
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Set-Cookie': cookieHeader,
+          },
+        }
+      );
+
+    } catch (verifyError) {
+      console.error('Signature verification error:', verifyError);
       return NextResponse.json(
-        { error: 'Signature verification failed' },
+        { error: t('errors.signature_verification_failed') || 'Invalid signature' },
         { status: 401 }
       );
     }
@@ -77,6 +130,13 @@ export async function POST(request: NextRequest) {
     console.error('Login error:', err);
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    );
+  } catch (error) {
+    console.error('Error during login:', error);
+    const t = getTranslator(request.headers.get('accept-language'));
+    return NextResponse.json(
+      { error: t('errors.internal_server_error') || 'Internal Server Error' },
       { status: 500 }
     );
   }

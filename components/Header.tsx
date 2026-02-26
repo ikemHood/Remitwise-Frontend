@@ -13,7 +13,7 @@ const Header = () => {
   {/* Logo and Brand */}
                         <div className="flex items-center gap-3">
                             {/* Logo Icon */}
-                                <Image src={"./logo.svg"} width={44} height={44} alt='logo' className='relative w-11 h-11' />
+                                <Image src={"/logo.svg"} width={44} height={44} alt='logo' className='relative w-11 h-11' />
 
                             {/* Brand Name */}
                                 <span className="text-white text-base sm:text-xl font-bold tracking-tight">RemitWise</span>

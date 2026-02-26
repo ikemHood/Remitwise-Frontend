@@ -2,12 +2,15 @@
 
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { BuildTxResult } from '@/lib/types/savings-goals';
+import { parseContractError, createSystemError, ContractErrorCode } from '@/lib/errors/contract-errors';
 
 // Get contract ID from environment
 const getContractId = (): string => {
   const contractId = process.env.NEXT_PUBLIC_SAVINGS_GOALS_CONTRACT_ID;
   if (!contractId) {
-    throw new Error('NEXT_PUBLIC_SAVINGS_GOALS_CONTRACT_ID is not configured');
+    throw createSystemError('NEXT_PUBLIC_SAVINGS_GOALS_CONTRACT_ID is not configured', {
+      contractId: 'savings-goals'
+    }, false);
   }
   return contractId;
 };
@@ -41,45 +44,52 @@ export async function buildCreateGoalTx(
   targetAmount: number,
   targetDate: string
 ): Promise<BuildTxResult> {
-  const config = getNetworkConfig();
-  const contractId = getContractId();
-  
-  // Create contract instance
-  const contract = new StellarSdk.Contract(contractId);
-  
-  // Convert parameters to Stellar SDK types
-  const ownerAddress = new StellarSdk.Address(owner);
-  const nameScVal = StellarSdk.nativeToScVal(name, { type: 'string' });
-  const amountScVal = StellarSdk.nativeToScVal(targetAmount, { type: 'i128' });
-  
-  // Convert date to Unix timestamp
-  const targetTimestamp = Math.floor(new Date(targetDate).getTime() / 1000);
-  const timestampScVal = StellarSdk.nativeToScVal(targetTimestamp, { type: 'u64' });
-  
-  // Build the operation
-  const operation = contract.call(
-    'create_goal',
-    ownerAddress.toScVal(),
-    nameScVal,
-    amountScVal,
-    timestampScVal
-  );
-  
-  // Create source account
-  const sourceAccount = await loadAccount(owner, config.rpcUrl);
-  
-  // Build transaction
-  const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-    fee: StellarSdk.BASE_FEE,
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(operation)
-    .setTimeout(300) // 5 minutes
-    .build();
-  
-  return {
-    xdr: transaction.toXDR()
-  };
+  try {
+    const config = getNetworkConfig();
+    const contractId = getContractId();
+    
+    // Create contract instance
+    const contract = new StellarSdk.Contract(contractId);
+    
+    // Convert parameters to Stellar SDK types
+    const ownerAddress = new StellarSdk.Address(owner);
+    const nameScVal = StellarSdk.nativeToScVal(name, { type: 'string' });
+    const amountScVal = StellarSdk.nativeToScVal(targetAmount, { type: 'i128' });
+    
+    // Convert date to Unix timestamp
+    const targetTimestamp = Math.floor(new Date(targetDate).getTime() / 1000);
+    const timestampScVal = StellarSdk.nativeToScVal(targetTimestamp, { type: 'u64' });
+    
+    // Build the operation
+    const operation = contract.call(
+      'create_goal',
+      ownerAddress.toScVal(),
+      nameScVal,
+      amountScVal,
+      timestampScVal
+    );
+    
+    // Create source account
+    const sourceAccount = await loadAccount(owner, config.rpcUrl);
+    
+    // Build transaction
+    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: config.networkPassphrase,
+    })
+      .addOperation(operation)
+      .setTimeout(300) // 5 minutes
+      .build();
+    
+    return {
+      xdr: transaction.toXDR()
+    };
+  } catch (error) {
+    throw parseContractError(error, {
+      contractId: 'savings-goals',
+      method: 'create_goal'
+    });
+  }
 }
 
 /**

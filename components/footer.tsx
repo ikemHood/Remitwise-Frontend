@@ -40,7 +40,7 @@ const Footer: React.FC = () => {
                         <div className="flex items-center gap-3">
                             {/* Logo Icon */}
                             <div className="relative w-11 h-11 flex items-center justify-center overflow-hidden">
-                                <Image src={"./logo.svg"} width={44} height={44} alt='logo' className='relative w-11 h-11' />
+                                <Image src={"/logo.svg"} width={44} height={44} alt='logo' className='relative w-11 h-11' />
                             </div>
 
                             {/* Brand Name */}

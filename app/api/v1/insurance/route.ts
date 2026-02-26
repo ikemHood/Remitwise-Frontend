@@ -1,28 +1,36 @@
 import { NextResponse } from 'next/server'
+import { getTranslator } from '../../../../lib/i18n'
 import { buildCreatePolicyTx } from '../../../../lib/contracts/insurance'
 import { StrKey } from '@stellar/stellar-sdk'
+import { ApiRouteError, withApiErrorHandler } from '@/lib/api/error-handler'
 
-export async function POST(req: Request) {
-  try {
-    const caller = req.headers.get('x-user')
-    if (!caller || !StrKey.isValidEd25519PublicKey(caller)) {
-      return NextResponse.json({ error: 'Unauthorized: missing or invalid x-user header' }, { status: 401 })
-    }
+export const POST = withApiErrorHandler(async function POST(req: Request) {
+  const t = getTranslator(req.headers.get('accept-language'));
 
-    const body = await req.json()
-    const { name, coverageType, monthlyPremium, coverageAmount } = body || {}
-
-    if (!name || typeof name !== 'string') return NextResponse.json({ error: 'Invalid name' }, { status: 400 })
-    if (!coverageType || typeof coverageType !== 'string') return NextResponse.json({ error: 'Invalid coverageType' }, { status: 400 })
-
-    const mp = Number(monthlyPremium)
-    const ca = Number(coverageAmount)
-    if (!(mp > 0)) return NextResponse.json({ error: 'Invalid monthlyPremium; must be > 0' }, { status: 400 })
-    if (!(ca > 0)) return NextResponse.json({ error: 'Invalid coverageAmount; must be > 0' }, { status: 400 })
-
-    const xdr = await buildCreatePolicyTx(caller, name, coverageType, mp, ca)
-    return NextResponse.json({ xdr })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
+  const caller = req.headers.get('x-user')
+  if (!caller || !StrKey.isValidEd25519PublicKey(caller)) {
+    throw new ApiRouteError(401, 'UNAUTHORIZED', t('errors.unauthorized_missing_header') || 'Unauthorized')
   }
-}
+
+  const body = await req.json()
+  const { name, coverageType, monthlyPremium, coverageAmount } = body || {}
+
+  if (!name || typeof name !== 'string') {
+    throw new ApiRouteError(400, 'VALIDATION_ERROR', t('errors.invalid_name') || 'Invalid name')
+  }
+  if (!coverageType || typeof coverageType !== 'string') {
+    throw new ApiRouteError(400, 'VALIDATION_ERROR', t('errors.invalid_coverage_type') || 'Invalid coverageType')
+  }
+
+  const mp = Number(monthlyPremium)
+  const ca = Number(coverageAmount)
+  if (!(mp > 0)) {
+    throw new ApiRouteError(400, 'VALIDATION_ERROR', t('errors.invalid_monthly_premium') || 'Invalid monthlyPremium; must be > 0')
+  }
+  if (!(ca > 0)) {
+    throw new ApiRouteError(400, 'VALIDATION_ERROR', t('errors.invalid_coverage_amount') || 'Invalid coverageAmount; must be > 0')
+  }
+
+  const xdr = await buildCreatePolicyTx(caller, name, coverageType, mp, ca)
+  return NextResponse.json({ xdr })
+})

@@ -1,5 +1,89 @@
 # API Routes Documentation
 
+## Folder Structure
+
+All API route handlers live under `app/api/` following Next.js 14 App Router conventions.
+
+```
+app/api/
+├── health/
+│   └── route.ts              # GET /api/health — public health check
+├── auth/
+│   ├── nonce/
+│   │   └── route.ts          # POST /api/auth/nonce
+│   ├── login/
+│   │   └── route.ts          # POST /api/auth/login
+│   └── logout/
+│       └── route.ts          # POST /api/auth/logout
+├── user/
+│   └── profile/
+│       └── route.ts          # GET /api/user/profile
+├── split/
+│   ├── route.ts              # GET, POST /api/split
+│   └── calculate/
+│       └── route.ts          # GET /api/split/calculate
+├── goals/
+│   └── route.ts              # GET, POST /api/goals
+├── bills/
+│   └── route.ts              # GET, POST /api/bills
+├── insurance/
+│   └── route.ts              # GET, POST /api/insurance
+├── family/
+│   └── route.ts              # GET, POST /api/family
+├── send/
+│   └── route.ts              # POST /api/send
+├── remittance/
+│   └── route.ts              # Remittance endpoints
+├── anchor/
+│   └── route.ts              # Anchor platform integration
+└── webhooks/
+    └── route.ts              # Webhook handlers
+```
+
+### Naming Convention
+
+```
+app/api/[domain]/[action]/route.ts
+```
+
+- **domain** — the feature area (e.g. `split`, `goals`, `bills`)
+- **action** — optional sub-action (e.g. `calculate`, `pay`, `cancel`)
+- **route.ts** — exports named functions: `GET`, `POST`, `PUT`, `DELETE`
+
+### How to Call an Endpoint
+
+```bash
+# Health check (public)
+curl http://localhost:3000/api/health
+
+# Protected route (requires session cookie)
+curl http://localhost:3000/api/split \
+  -H "Cookie: remitwise-session=<your-session-token>"
+```
+
+### How to Add a New Route
+
+1. Create the folder: `app/api/[domain]/[action]/`
+2. Create `route.ts` inside it
+3. Export the HTTP methods you need:
+
+```typescript
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({ data: "example" }, { status: 200 });
+}
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  return NextResponse.json({ received: body }, { status: 201 });
+}
+```
+
+4. If the route is protected, wrap with `withAuth` (see Authentication section below).
+
+---
+
 ## Authentication
 
 All API routes use cookie-based session authentication. The session cookie is set after successful login and verified on protected routes.
@@ -22,6 +106,8 @@ async function handler(request: NextRequest, session: string) {
 
 export const GET = withAuth(handler);
 ```
+
+---
 
 ## Route Classification
 
@@ -54,6 +140,8 @@ All protected routes return `401 Unauthorized` if no valid session exists.
 | POST | `/api/family` | Add family member |
 | POST | `/api/send` | Send money transaction |
 
+---
+
 ## Error Responses
 
 ### 401 Unauthorized
@@ -70,6 +158,8 @@ All protected routes return `401 Unauthorized` if no valid session exists.
 }
 ```
 
+---
+
 ## Authentication Flow
 
 1. **Request Nonce**: `POST /api/auth/nonce` with `{ publicKey }`
@@ -79,6 +169,8 @@ All protected routes return `401 Unauthorized` if no valid session exists.
 5. **Protected Requests**: Cookie automatically sent with requests
 6. **Logout**: `POST /api/auth/logout` clears session
 
+---
+
 ## Implementation Notes
 
 - Session stored as httpOnly cookie for security
@@ -86,6 +178,8 @@ All protected routes return `401 Unauthorized` if no valid session exists.
 - All protected routes use `withAuth` wrapper
 - Signature verification not yet implemented (TODO)
 - Session storage in database not yet implemented (TODO)
+
+---
 
 ## Contract Integration
 
@@ -130,3 +224,6 @@ The following environment variables must be configured:
 - `404 Not Found`: Contract not deployed or split not configured
 - `500 Internal Server Error`: RPC connection error or contract read failure
 - `400 Bad Request`: Invalid parameters (calculate endpoint)
+```
+
+---

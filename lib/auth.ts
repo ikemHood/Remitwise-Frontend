@@ -36,6 +36,23 @@ export function unauthorizedResponse() {
   });
 }
 
+import {  NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+
+type NextHandler = (req: NextRequest, address: string) => Promise<NextResponse>;
+
+export function withAuth(handler: NextHandler) {
+  return async (req: NextRequest) => {
+
+    const session = await getSession();
+      if (!session?.address) {
+        return NextResponse.json(
+          { error: 'Unauthorized', message: 'Not authenticated' },
+          { status: 401 }
+        );
+      }
+    
+    return handler(req, session.address);
 /**
  * Higher-order function that wraps a route handler with auth validation.
  * Extracts the Bearer token and passes it to the handler as `session`.

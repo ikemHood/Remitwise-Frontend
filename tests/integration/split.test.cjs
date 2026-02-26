@@ -1,23 +1,13 @@
 /**
- * Integration tests for response format validation
+ * Integration tests for protected routes
  *
- * Tests health endpoint with various scenarios to validate:
- * - Successful response format
- * - Content-Type headers
- * - JSON parsing
+ * Note: Routes that depend on @/lib aliases (like soroban/client)
+ * cannot be tested in CommonJS test environment.
+ * Full API route testing is covered by E2E tests instead.
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const path = require("node:path");
-const { pathToFileURL } = require("node:url");
-const { setTestEnv, createMockRequest } = require("./setup.cjs");
-const {
-  callHandler,
-  expectStatus,
-  expectJson,
-  expectStatusJson,
-} = require("./helpers.cjs");
 
 // Set up test environment before running tests
 setTestEnv();

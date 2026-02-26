@@ -61,6 +61,10 @@ test("Health Endpoint Response Format", async (t) => {
     // Should only have status field
     const keys = Object.keys(body);
     assert(keys.includes("status"), "Expected status field");
-    assert.equal(keys.length, 1, "Expected only status field in response");
+    assert.equal(
+      keys.length,
+      3,
+      "Expected status, soroban, and timestamp fields in response",
+    );
   });
 });

@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
 
     // Retrieve and clear nonce — returns null if missing or expired
     const nonce = getAndClearNonce(address);
+    console.log(`[Login] Address: ${address}, Retrived Nonce: ${nonce}`);
+
     if (!nonce) {
       return NextResponse.json(
         { error: 'Nonce expired or missing. Please request a new nonce.' },
@@ -42,14 +44,16 @@ export async function POST(request: NextRequest) {
       const keypair = Keypair.fromPublicKey(address);
       // Nonce is stored as hex string; signature is base64 from the client.
       const isValid = keypair.verify(
-        Buffer.from(nonce, 'hex'),
+        Buffer.from(nonce, 'utf8'),
         Buffer.from(signature, 'base64')
       );
+      console.log(`[Login] Signature valid: ${isValid}`);
 
       if (!isValid) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
-    } catch {
+    } catch (err) {
+      console.error('[Login] Verification error:', err);
       return NextResponse.json(
         { error: 'Signature verification failed' },
         { status: 401 }
